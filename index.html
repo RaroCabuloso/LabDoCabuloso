@@ -25,7 +25,7 @@
             --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
             --toolbar-height: 60px;
         }
-
+        
         .light-theme {
             --primary: #f0f6fc;
             --secondary: #ffffff;
@@ -404,6 +404,29 @@
             overflow: hidden;
             box-shadow: var(--box-shadow);
         }
+        
+        /* Mobile optimizations */
+        .tool-button {
+            padding: 10px 14px;
+            font-size: 0.9rem;
+        }
+        
+        .tool-button i {
+            font-size: 1.1rem;
+        }
+        
+        .tab {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+        
+        .header {
+            padding: 10px 12px;
+        }
+        
+        .logo {
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 <body class="terminal-effect">
@@ -416,7 +439,7 @@
             <i class="fas fa-moon"></i>
         </div>
     </div>
-
+    
     <div class="container">
         <div class="tabs">
             <div class="tab active" data-target="html-editor">HTML</div>
@@ -544,16 +567,15 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-
-.card {
-    transform: translateY(0);
-    animation: float 3s ease-in-out infinite;
+.card { 
+    transform: translateY(0); 
+    animation: float 3s ease-in-out infinite; 
 }
 
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-15px); }
-    100% { transform: translateY(0px); }
+@keyframes float { 
+    0% { transform: translateY(0px); } 
+    50% { transform: translateY(-15px); } 
+    100% { transform: translateY(0px); } 
 }`,
             js: `// Adicione seu JavaScript aqui
 document.addEventListener('DOMContentLoaded', function() {
@@ -595,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const animation = el.animate([
             { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
-            { transform: `translateY(${window.innerHeight}px) rotate(${rotation}deg)`, opacity: 0 }
+            { transform: \`translateY(\${window.innerHeight}px) rotate(\${rotation}deg)\`, opacity: 0 }
         ], {
             duration: duration,
             easing: 'cubic-bezier(0.25, 0.8, 0.25, 1)'
@@ -790,7 +812,6 @@ document.addEventListener('DOMContentLoaded', function() {
     <script>${js}<\/script>
 </body>
 </html>`;
-                
                 const blob = new Blob([fullHtml], { type: 'text/html' });
                 const url = URL.createObjectURL(blob);
                 
@@ -803,7 +824,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 URL.revokeObjectURL(url);
             });
 
-            // Botão Adicionar Bibliotecas
+            // Botão Adicionar Bibliotecas (CORRIGIDO)
             document.getElementById('addLibButton').addEventListener('click', function() {
                 const libs = prompt('Adicione URLs de bibliotecas externas (separadas por vírgula):\n\nExemplo: https://code.jquery.com/jquery-3.6.0.min.js, https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css');
                 
@@ -814,7 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Adicionar bibliotecas ao cabeçalho
                     urls.forEach(url => {
                         if (url.endsWith('.js')) {
-                            html = html.replace('</head>', `<script src="${url}"></script>\n</head>`);
+                            html = html.replace('</head>', `<script src="${url}"><\/script>\n</head>`);
                         } else if (url.endsWith('.css')) {
                             html = html.replace('</head>', `<link rel="stylesheet" href="${url}">\n</head>`);
                         }
@@ -908,6 +929,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
+
+            // Botão de atualizar preview
+            document.getElementById('refreshPreview').addEventListener('click', updatePreview);
 
             // Inicializar preview
             updatePreview();
