@@ -42,14 +42,13 @@ SYSTEM     = Color3.fromRGB(245, 245, 245) -- branco suave (texto/ícones)
 	SectionWidth = 0.95
 }
 function NoHyper.set_theme(name:string) -- [[ YOU CAN CUSTOM THEME ]]
-if name:lower() == 'nohyper' then
-	-- AMOLED REAL
-	NoHyper.Theme.BACKGROUND = Color3.fromRGB(0, 0, 0)      -- preto absoluto
-	NoHyper.Theme.SECTION    = Color3.fromRGB(6, 6, 6)      -- quase preto
-	NoHyper.Theme.MAIN       = Color3.fromRGB(189, 48, 37)  -- vermelho original
-	NoHyper.Theme.STROKE     = Color3.fromRGB(10, 10, 10)   -- borda sutil
-	NoHyper.Theme.TOUCH      = Color3.fromRGB(120, 30, 24)  -- vermelho mais fechado
-	NoHyper.Theme.SYSTEM     = Color3.fromRGB(225, 57, 44)  -- vermelho system
+	if name:lower() == 'nohyper' then
+		NoHyper.Theme.BACKGROUND = Color3.fromRGB(34, 37, 42)
+		NoHyper.Theme.SECTION = Color3.fromRGB(39, 42, 48)
+		NoHyper.Theme.MAIN = Color3.fromRGB(189, 48, 37)
+		NoHyper.Theme.STROKE = Color3.fromRGB(27, 30, 34)
+		NoHyper.Theme.TOUCH = Color3.fromRGB(103, 26, 20)
+		NoHyper.Theme.SYSTEM = Color3.fromRGB(225, 57, 44)
 	elseif name:lower() == 'bedol' then -- Theme for me!!!!!
 		NoHyper.Theme.BACKGROUND = Color3.fromRGB(34, 37, 42)
 		NoHyper.Theme.SECTION = Color3.fromRGB(39, 42, 48)
@@ -303,7 +302,7 @@ function NoHyper.new(WindowName,WindowLogo,WindowDescription)
 	MainFrame.Parent = NoHyperUI
 	MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 	MainFrame.BackgroundColor3 = NoHyper.Theme.BACKGROUND
-	MainFrame.BackgroundTransparency = 0.99
+	MainFrame.BackgroundTransparency = 1.000
 	MainFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	MainFrame.BorderSizePixel = 0
 	MainFrame.ClipsDescendants = true
@@ -495,7 +494,7 @@ function NoHyper.new(WindowName,WindowLogo,WindowDescription)
 	DropShadow.ZIndex = 0
 	DropShadow.Image = "rbxassetid://6015897843"
 	DropShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-	DropShadow.ImageTransparency = 1
+	DropShadow.ImageTransparency = 0.55
 	DropShadow.ScaleType = Enum.ScaleType.Slice
 	DropShadow.SliceCenter = Rect.new(49, 49, 450, 450)
 
@@ -860,7 +859,7 @@ function NoHyper.new(WindowName,WindowLogo,WindowDescription)
 			Frame.Parent = SectionTitle
 			Frame.AnchorPoint = Vector2.new(0.5, 1)
 			Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			Frame.BackgroundTransparency = 0.99
+      Frame.BackgroundTransparency = 0.35
 			Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 			Frame.BorderSizePixel = 0
 			Frame.Position = UDim2.new(0.5, 0, 1, 0)
@@ -880,6 +879,30 @@ function NoHyper.new(WindowName,WindowLogo,WindowDescription)
 			UICorner_2.Parent = Frame_2
 
 			UICorner_3.Parent = Frame
+      local GlassOverlay = Instance.new("Frame")
+GlassOverlay.Parent = Frame
+GlassOverlay.Size = UDim2.fromScale(1,1)
+GlassOverlay.Position = UDim2.fromScale(0,0)
+GlassOverlay.BackgroundColor3 = Color3.fromRGB(255,255,255)
+GlassOverlay.BackgroundTransparency = 0.92
+GlassOverlay.ZIndex = Frame.ZIndex + 1
+GlassOverlay.Name = "GlassOverlay"
+
+local corner = Instance.new("UICorner", GlassOverlay)
+corner.CornerRadius = UDim.new(0,10)
+
+local gradient = Instance.new("UIGradient", GlassOverlay)
+gradient.Rotation = 90
+gradient.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 0.6),
+	NumberSequenceKeypoint.new(1, 0.9)
+})
+
+local stroke = Instance.new("UIStroke", Frame)
+stroke.Thickness = 1
+stroke.Color = Color3.fromRGB(255,255,255)
+stroke.Transparency = 0.85
+
 
 			UIListLayout.Parent = Section
 			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
