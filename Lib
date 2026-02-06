@@ -303,7 +303,7 @@ function NoHyper.new(WindowName,WindowLogo,WindowDescription)
 	MainFrame.Parent = NoHyperUI
 	MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 	MainFrame.BackgroundColor3 = NoHyper.Theme.BACKGROUND
-	MainFrame.BackgroundTransparency = 0.88
+	MainFrame.BackgroundTransparency = 0.99
 	MainFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	MainFrame.BorderSizePixel = 0
 	MainFrame.ClipsDescendants = true
@@ -860,7 +860,7 @@ function NoHyper.new(WindowName,WindowLogo,WindowDescription)
 			Frame.Parent = SectionTitle
 			Frame.AnchorPoint = Vector2.new(0.5, 1)
 			Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			Frame.BackgroundTransparency = 0.88
+			Frame.BackgroundTransparency = 0.99
 			Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 			Frame.BorderSizePixel = 0
 			Frame.Position = UDim2.new(0.5, 0, 1, 0)
