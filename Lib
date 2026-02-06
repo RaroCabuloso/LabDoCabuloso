@@ -428,7 +428,7 @@ function NoHyper.new(WindowName,WindowLogo,WindowDescription)
 	LogoHub.Position = UDim2.new(0.125, 0, 0.5, 0)
 	LogoHub.Size = UDim2.new(2.5, 0, 0.899999976, 0)
 	LogoHub.SizeConstraint = Enum.SizeConstraint.RelativeYY
-	LogoHub.Image = tostring(WindowLogo)
+	LogoHub.Image = "rbxassetid://100971981026789" -- Altere para o ID da sua imagem
 	LogoHub.ScaleType = Enum.ScaleType.Fit
 	LogoHub.ImageTransparency = 1
 
