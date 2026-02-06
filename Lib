@@ -31,12 +31,12 @@ end
 
 local NoHyper = {
 	Theme = {
-		BACKGROUND = Color3.fromRGB(18, 18, 18),   -- preto profundo (faixa preta)
-SECTION    = Color3.fromRGB(28, 28, 28),   -- cinza escuro elegante
-MAIN       = Color3.fromRGB(206, 17, 38),  -- vermelho oficial da bandeira 🇾🇪
-STROKE     = Color3.fromRGB(12, 12, 12),   -- borda bem escura
-TOUCH      = Color3.fromRGB(150, 14, 30),  -- vermelho mais fechado (hover/click)
-SYSTEM     = Color3.fromRGB(235, 235, 235) -- branco suave (faixa branca)
+		BACKGROUND = Color3.fromRGB(0, 0, 0),      -- preto AMOLED (pixel off)
+SECTION    = Color3.fromRGB(10, 10, 10),   -- quase preto (separação sutil)
+MAIN       = Color3.fromRGB(206, 17, 38),  -- vermelho da bandeira 🇾🇪
+STROKE     = Color3.fromRGB(0, 0, 0),      -- borda invisível / limpa
+TOUCH      = Color3.fromRGB(150, 14, 30),  -- vermelho escuro (hover/click)
+SYSTEM     = Color3.fromRGB(245, 245, 245) -- branco suave (texto/ícones)
 	},
 	AutoUpdate = {},
 	SectionWidth = 0.95
