@@ -107,7 +107,7 @@ local function SetImage(name:string,image:ImageLabel)
 	name = name or "ADS"
 	name = name:lower()
 
-	local NigImage = "rbxassetid://3926305904"
+	local NigImage = "rbxassetid://100971981026789"
 
 	if name == "ads" then
 		image.Image = NigImage
