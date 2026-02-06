@@ -31,17 +31,16 @@ end
 
 local NoHyper = {
 	Theme = {
-		BACKGROUND = Color3.fromRGB(34, 37, 42),
-		SECTION = Color3.fromRGB(39, 42, 48),
-		MAIN = Color3.fromRGB(189, 48, 37),
-		STROKE = Color3.fromRGB(27, 30, 34),
-		TOUCH = Color3.fromRGB(103, 26, 20),
-		SYSTEM = Color3.fromRGB(225, 57, 44)
+		BACKGROUND = Color3.fromRGB(18, 18, 18),   -- preto profundo (faixa preta)
+SECTION    = Color3.fromRGB(28, 28, 28),   -- cinza escuro elegante
+MAIN       = Color3.fromRGB(206, 17, 38),  -- vermelho oficial da bandeira 🇾🇪
+STROKE     = Color3.fromRGB(12, 12, 12),   -- borda bem escura
+TOUCH      = Color3.fromRGB(150, 14, 30),  -- vermelho mais fechado (hover/click)
+SYSTEM     = Color3.fromRGB(235, 235, 235) -- branco suave (faixa branca)
 	},
 	AutoUpdate = {},
 	SectionWidth = 0.95
 }
-
 function NoHyper.set_theme(name:string) -- [[ YOU CAN CUSTOM THEME ]]
 	if name:lower() == 'nohyper' then
 		NoHyper.Theme.BACKGROUND = Color3.fromRGB(34, 37, 42)
@@ -78,8 +77,24 @@ function NoHyper.set_theme(name:string) -- [[ YOU CAN CUSTOM THEME ]]
 		NoHyper.Theme.STROKE = Color3.fromRGB(68, 72, 89)
 		NoHyper.Theme.TOUCH = Color3.fromRGB(36, 36, 51)
 		NoHyper.Theme.SYSTEM = Color3.fromRGB(189, 194, 218)
+
+	-- Novo tema: inspirado na bandeira do Iêmen (vermelho / branco / preto)
+	elseif name:lower() == 'yemen' or name:lower() == 'iemen' then
+		-- Fundo escuro (representa a faixa preta)
+		NoHyper.Theme.BACKGROUND = Color3.fromRGB(8, 8, 8)        -- preto profundo
+		-- Seções claras para facilitar leitura (representa a faixa branca)
+		NoHyper.Theme.SECTION = Color3.fromRGB(245, 245, 245)    -- branco suave
+		-- Cor principal (representa a faixa vermelha)
+		NoHyper.Theme.MAIN = Color3.fromRGB(206, 17, 38)         -- vermelho da bandeira
+		-- Contornos / bordas
+		NoHyper.Theme.STROKE = Color3.fromRGB(30, 30, 30)        -- borda escura, contraste com SECTION
+		-- Estado de toque / ativo: variação do vermelho
+		NoHyper.Theme.TOUCH = Color3.fromRGB(165, 14, 30)        -- vermelho mais escuro ao interagir
+		-- Elementos do sistema / destaques (usar branco para ícones/labels importantes)
+		NoHyper.Theme.SYSTEM = Color3.fromRGB(255, 255, 255)     -- acentos brancos
 	end
 end
+
 
 local function Signal(list:{{name:string,callback:FunctionalTest}})
 	local k = {}
