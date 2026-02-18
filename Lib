@@ -12,7 +12,36 @@ local Core = (gethui and gethui()) or game:FindFirstChild'CoreGui' or LocalPlaye
 local UIS = game:GetService('UserInputService')
 local TextService = game:GetService('TextService')
 local ProtectGui = protectgui or (syn and syn.protect_gui) or (function() end);
+-- === CUSTOM FONT CONFIG ===
+local CUSTOM_FONT_ASSET = "rbxassetid://12187375716"
 
+local function applyCustomFont(obj, weight, style)
+    -- safe apply FontFace to TextLabel/TextButton/TextBox when available
+    pcall(function()
+        if not obj then return end
+        local class = obj.ClassName
+        if class == "TextLabel" or class == "TextButton" or class == "TextBox" then
+            weight = weight or Enum.FontWeight.Regular
+            style  = style  or Enum.FontStyle.Normal
+            -- Font.new pode falhar em alguns ambientes; pcall evita crash
+            obj.FontFace = Font.new(CUSTOM_FONT_ASSET, weight, style)
+        end
+    end)
+end
+
+local function applyCustomFontToTree(root)
+    if not root then return end
+    pcall(function()
+        for _, v in ipairs(root:GetDescendants()) do
+            local cls = v.ClassName
+            if cls == "TextLabel" or cls == "TextButton" or cls == "TextBox" then
+                -- tenta aplicar, sem quebrar se não suportado
+                applyCustomFont(v)
+            end
+        end
+    end)
+end
+-- === end custom font config ===
 local function cretate_button(asd)
 	local button=Instance.new('TextButton')
 	button.Size=UDim2.new(1,0,1,0)
