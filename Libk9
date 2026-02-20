@@ -16,7 +16,7 @@ local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
--- Mouse com verificação para mobile
+-- Mouse com verificação
 local Mouse = pcall(function() return LocalPlayer:GetMouse() end) and LocalPlayer:GetMouse() or nil
 
 -- Font com fallback
@@ -124,7 +124,7 @@ function K9Library:Notify(title, message, duration)
     end)
 end
 
--- Sistema de Partículas CORRIGIDO
+-- Sistema de Partículas
 function K9Library:CreateParticleNetwork(parent, customConfig)
     local particleConfig = {}
     for key, value in pairs(Config.ParticleConfig) do
@@ -136,7 +136,6 @@ function K9Library:CreateParticleNetwork(parent, customConfig)
         end
     end
     
-    -- Container das partículas (dentro do MainFrame)
     local container = Utility:CreateInstance("Frame", {
         Name = "ParticleContainer",
         BackgroundTransparency = 1,
@@ -145,12 +144,11 @@ function K9Library:CreateParticleNetwork(parent, customConfig)
         Position = UDim2.new(0, 0, 0, 0),
         ClipsDescendants = true,
         ZIndex = 0
-    }, parent)    
-    local particles = {}
+    }, parent)
+        local particles = {}
     local connections = {}
     local running = true
     
-    -- Criar partículas
     for i = 1, particleConfig.ParticleCount do
         local particle = Utility:CreateInstance("Frame", {
             Name = "Particle_" .. i,
@@ -178,7 +176,6 @@ function K9Library:CreateParticleNetwork(parent, customConfig)
         })
     end
     
-    -- Criar linhas
     local function createLine(p1, p2, transparency)
         local distance = (p1 - p2).Magnitude
         if distance == 0 then return nil end
@@ -194,11 +191,10 @@ function K9Library:CreateParticleNetwork(parent, customConfig)
             Position = UDim2.new(0, midpoint.X - distance / 2, 0, midpoint.Y - 0.5),
             Rotation = math.deg(angle),
             ZIndex = 0
-        }, container)    end
+        }, container)
+    end
     
-    -- Loop de atualização
-    local renderConnection
-    renderConnection = RunService.RenderStepped:Connect(function()
+    local renderConnection    renderConnection = RunService.RenderStepped:Connect(function()
         if not running or not container.Parent then
             if renderConnection then renderConnection:Disconnect() end
             return
@@ -206,14 +202,12 @@ function K9Library:CreateParticleNetwork(parent, customConfig)
         
         local containerSize = container.AbsoluteSize
         
-        -- Atualizar posições
         for _, particleData in ipairs(particles) do
             local particle = particleData.Instance
             local pos = particle.Position
             local newX = pos.X.Offset + particleData.Velocity.X
             local newY = pos.Y.Offset + particleData.Velocity.Y
             
-            -- Rebater nas bordas do container
             if newX <= 0 or newX >= containerSize.X - particleConfig.ParticleSize then
                 particleData.Velocity = Vector2.new(-particleData.Velocity.X, particleData.Velocity.Y)
             end
@@ -231,27 +225,25 @@ function K9Library:CreateParticleNetwork(parent, customConfig)
             end)
         end
         
-        -- Limpar conexões antigas
         for _, line in ipairs(connections) do
             pcall(function() line:Destroy() end)
         end
         connections = {}
         
-        -- Criar novas conexões
         local maxConnections = particleConfig.MaxConnectionsPerParticle
         for i = 1, #particles do
             local connectionCount = 0
             for j = i + 1, #particles do
                 if connectionCount >= maxConnections then break end
-                                local pos1 = particles[i].Instance.AbsolutePosition + particles[i].Instance.AbsoluteSize / 2
+                
+                local pos1 = particles[i].Instance.AbsolutePosition + particles[i].Instance.AbsoluteSize / 2
                 local pos2 = particles[j].Instance.AbsolutePosition + particles[j].Instance.AbsoluteSize / 2
                 local distance = (pos1 - pos2).Magnitude
                 
                 if distance <= particleConfig.ConnectionDistance then
                     local transparency = math.clamp(1 - (distance / particleConfig.ConnectionDistance), 
                         particleConfig.LineTransparency - 0.2, particleConfig.LineTransparency + 0.2)
-                    local line = createLine(pos1, pos2, transparency)
-                    if line then
+                    local line = createLine(pos1, pos2, transparency)                    if line then
                         table.insert(connections, line)
                         connectionCount = connectionCount + 1
                     end
@@ -278,7 +270,6 @@ print("[K9 UI] Parte 1/4 Carregada")
 -- Compatível: Mobile + PC
 -- ═══════════════════════════════════════════════════════════════
 
--- Create Library
 function K9Library:CreateLib(libName, customTheme)
     if customTheme then
         for key, value in pairs(customTheme) do
@@ -286,7 +277,6 @@ function K9Library:CreateLib(libName, customTheme)
         end
     end
     
-    -- Remove duplicatas
     pcall(function()
         for _, gui in ipairs(CoreGui:GetChildren()) do
             if gui:IsA("ScreenGui") and gui.Name:find("K9_") then
@@ -295,7 +285,6 @@ function K9Library:CreateLib(libName, customTheme)
         end
     end)
     
-    -- ScreenGui
     MainGUI = Instance.new("ScreenGui")
     MainGUI.Name = libName or "K9_Library"
     MainGUI.ResetOnSpawn = false
@@ -304,7 +293,6 @@ function K9Library:CreateLib(libName, customTheme)
     MainGUI.IgnoreGuiInset = true
     MainGUI.Parent = CoreGui
     
-    -- Main Frame
     MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Parent = MainGUI
@@ -320,19 +308,17 @@ function K9Library:CreateLib(libName, customTheme)
     MainCorner.CornerRadius = UDim.new(0, Config.Sizes.CornerRadius)
     MainCorner.Parent = MainFrame
     
-    -- Header (Arrastável)
-    local Header = Instance.new("Frame")    Header.Name = "Header"
+    local Header = Instance.new("Frame")
+    Header.Name = "Header"
     Header.Parent = MainFrame
     Header.BackgroundColor3 = CurrentTheme.Glass
     Header.BackgroundTransparency = 0.3
-    Header.BorderSizePixel = 0
-    Header.Size = UDim2.new(1, 0, 0, 40)
+    Header.BorderSizePixel = 0    Header.Size = UDim2.new(1, 0, 0, 40)
     
     local HeaderCorner = Instance.new("UICorner")
     HeaderCorner.CornerRadius = UDim.new(0, Config.Sizes.CornerRadius)
     HeaderCorner.Parent = Header
     
-    -- Title
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "TitleLabel"
     TitleLabel.Parent = Header
@@ -345,7 +331,6 @@ function K9Library:CreateLib(libName, customTheme)
     TitleLabel.TextSize = 16
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     
-    -- Close Button
     local CloseButton = Instance.new("ImageButton")
     CloseButton.Name = "CloseButton"
     CloseButton.Parent = Header
@@ -358,7 +343,6 @@ function K9Library:CreateLib(libName, customTheme)
     CloseButton.ImageRectSize = Vector2.new(24, 24)
     CloseButton.ImageColor3 = CurrentTheme.Text
     
-    -- Navigation
     local Navigation = Instance.new("Frame")
     Navigation.Name = "Navigation"
     Navigation.Parent = MainFrame
@@ -370,21 +354,20 @@ function K9Library:CreateLib(libName, customTheme)
     Navigation.ClipsDescendants = true
     
     local NavCorner = Instance.new("UICorner")
-    NavCorner.CornerRadius = UDim.new(0, 0, 0, Config.Sizes.CornerRadius)    NavCorner.Parent = Navigation
+    NavCorner.CornerRadius = UDim.new(0, 0, 0, Config.Sizes.CornerRadius)
+    NavCorner.Parent = Navigation
     
     local NavListLayout = Instance.new("UIListLayout")
     NavListLayout.Parent = Navigation
     NavListLayout.SortOrder = Enum.SortOrder.LayoutOrder
     NavListLayout.Padding = UDim.new(0, 4)
     
-    local NavPadding = Instance.new("UIPadding")
-    NavPadding.Parent = Navigation
+    local NavPadding = Instance.new("UIPadding")    NavPadding.Parent = Navigation
     NavPadding.PaddingTop = UDim.new(0, 8)
     NavPadding.PaddingBottom = UDim.new(0, 8)
     NavPadding.PaddingLeft = UDim.new(0, 6)
     NavPadding.PaddingRight = UDim.new(0, 6)
     
-    -- Content Container
     local ContentContainer = Instance.new("ScrollingFrame")
     ContentContainer.Name = "ContentContainer"
     ContentContainer.Parent = MainFrame
@@ -413,13 +396,12 @@ function K9Library:CreateLib(libName, customTheme)
     local TabsFolder = Instance.new("Folder")
     TabsFolder.Parent = ContentContainer
     
-    -- Particles (dentro do MainFrame)
     ParticleSystem = K9Library:CreateParticleNetwork(MainFrame, Config.ParticleConfig)
     
-    -- Dragging System (ARRASTÁVEL)
     local dragging = false
     local dragInput = nil
-    local mousePos = nil    local framePos = nil
+    local mousePos = nil
+    local framePos = nil
     
     Header.InputBegan:Connect(function(input)
         pcall(function()
@@ -429,8 +411,7 @@ function K9Library:CreateLib(libName, customTheme)
                 mousePos = input.Position
                 framePos = MainFrame.Position
                 
-                input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then
+                input.Changed:Connect(function()                    if input.UserInputState == Enum.UserInputState.End then
                         dragging = false
                     end
                 end)
@@ -452,23 +433,20 @@ function K9Library:CreateLib(libName, customTheme)
             if input == dragInput and dragging then
                 local delta = input.Position - mousePos
                 MainFrame.Position = UDim2.new(
-                    framePos.X.Scale,
-                    framePos.X.Offset + delta.X,
-                    framePos.Y.Scale,
-                    framePos.Y.Offset + delta.Y
+                    framePos.X.Scale, framePos.X.Offset + delta.X,
+                    framePos.Y.Scale, framePos.Y.Offset + delta.Y
                 )
             end
         end)
     end)
     
-    -- Close Event
     CloseButton.MouseButton1Click:Connect(function()
         Utility:TweenObject(MainFrame, {Size = UDim2.new(0, 0, 0, 0)}, 0.3)
         task.wait(0.3)
         if ParticleSystem then ParticleSystem:Destroy() end
         MainGUI:Destroy()
     end)
-        -- Tabs System
+    
     local Tabs = {}
     local firstTab = true
     local tabButtons = {}
@@ -482,8 +460,7 @@ function K9Library:CreateLib(libName, customTheme)
         TabButton.BackgroundTransparency = 1
         TabButton.Size = UDim2.new(1, 0, 0, 36)
         TabButton.FontFace = Config.Font
-        TabButton.Text = "  " .. tabName
-        TabButton.TextColor3 = CurrentTheme.TextSecondary
+        TabButton.Text = "  " .. tabName        TabButton.TextColor3 = CurrentTheme.TextSecondary
         TabButton.TextSize = 13
         TabButton.TextXAlignment = Enum.TextXAlignment.Left
         TabButton.AutoButtonColor = false
@@ -517,7 +494,8 @@ function K9Library:CreateLib(libName, customTheme)
         TabContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
         TabContentLayout.Padding = UDim2.new(0, 6)
         
-        if firstTab then            firstTab = false
+        if firstTab then
+            firstTab = false
             TabContent.Visible = true
             TabButton.BackgroundTransparency = 0.8
             TabButton.TextColor3 = CurrentTheme.Text
@@ -531,8 +509,7 @@ function K9Library:CreateLib(libName, customTheme)
             for _, btn in ipairs(tabButtons) do
                 Utility:TweenObject(btn, {BackgroundTransparency = 1}, 0.2)
                 Utility:TweenObject(btn, {TextColor3 = CurrentTheme.TextSecondary}, 0.2)
-                local sel = btn:FindFirstChild("Selector")
-                if sel then sel.Visible = false end
+                local sel = btn:FindFirstChild("Selector")                if sel then sel.Visible = false end
             end
             TabContent.Visible = true
             Utility:TweenObject(TabButton, {BackgroundTransparency = 0.8}, 0.2)
@@ -544,7 +521,6 @@ function K9Library:CreateLib(libName, customTheme)
         
         table.insert(tabButtons, TabButton)
         
-        -- Sections
         local Sections = {}
         
         function Sections:NewSection(sectionName)
@@ -566,7 +542,8 @@ function K9Library:CreateLib(libName, customTheme)
             local SectionStroke = Instance.new("UIStroke")
             SectionStroke.Parent = SectionFrame
             SectionStroke.Thickness = 1
-            SectionStroke.Color = CurrentTheme.Border            SectionStroke.Transparency = 0.5
+            SectionStroke.Color = CurrentTheme.Border
+            SectionStroke.Transparency = 0.5
             SectionStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             
             local SectionTitle = Instance.new("TextLabel")
@@ -581,8 +558,7 @@ function K9Library:CreateLib(libName, customTheme)
             SectionTitle.TextSize = 13
             SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
             
-            local SectionContent = Instance.new("Frame")
-            SectionContent.Name = "SectionContent"
+            local SectionContent = Instance.new("Frame")            SectionContent.Name = "SectionContent"
             SectionContent.Parent = SectionFrame
             SectionContent.BackgroundTransparency = 1
             SectionContent.Position = UDim2.new(0, 0, 0, 30)
@@ -611,11 +587,13 @@ function K9Library:CreateLib(libName, customTheme)
             UpdateSectionSize()
             SectionLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateSectionSize)
             
-            -- Elements (CONTINUA NA PARTE 3/4)
             local Elements = {}
             
+            -- PARTE 3/4 CONTINUA AQUI
+            
             return Elements
-        end        
+        end
+        
         return Sections
     end
     
@@ -628,9 +606,6 @@ print("[K9 UI] Parte 2/4 Carregada")
 -- Parte 3/4: Elementos
 -- Compatível: Mobile + PC
 -- ═══════════════════════════════════════════════════════════════
-
--- Adicionar elementos à função Sections:NewSection (continuação da Parte 2)
--- COPIE ESTE CÓDIGO E COLE DENTRO DE "local Elements = {}" NA PARTE 2/4
 
 -- Button
 function Elements:NewButton(buttonName, callback)
@@ -672,10 +647,10 @@ function Elements:NewButton(buttonName, callback)
     ButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
     
     ButtonFrame.MouseButton1Click:Connect(function()
-        pcall(callback)    end)
+        pcall(callback)
+    end)
     
-    UpdateSectionSize()
-    
+    UpdateSectionSize()    
     return {}
 end
 
@@ -708,7 +683,6 @@ function Elements:NewToggle(toggleName, default, callback)
     ToggleStroke.Transparency = 0.5
     ToggleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     
-    -- Título do Toggle (Posição CORRIGIDA)
     local ToggleTitle = Instance.new("TextLabel")
     ToggleTitle.Name = "ToggleTitle"
     ToggleTitle.Parent = ToggleFrame
@@ -721,12 +695,11 @@ function Elements:NewToggle(toggleName, default, callback)
     ToggleTitle.TextSize = 13
     ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
     
-    -- Toggle Indicator (CORRIGIDO)    local ToggleIndicator = Instance.new("Frame")
+    local ToggleIndicator = Instance.new("Frame")
     ToggleIndicator.Name = "ToggleIndicator"
     ToggleIndicator.Parent = ToggleFrame
     ToggleIndicator.BackgroundColor3 = CurrentTheme.Border
-    ToggleIndicator.Position = UDim2.new(1, -12, 0.5, 0)
-    ToggleIndicator.AnchorPoint = Vector2.new(1, 0.5)
+    ToggleIndicator.Position = UDim2.new(1, -12, 0.5, 0)    ToggleIndicator.AnchorPoint = Vector2.new(1, 0.5)
     ToggleIndicator.Size = UDim2.new(0, 40, 0, 20)
     
     local IndicatorCorner = Instance.new("UICorner")
@@ -745,7 +718,6 @@ function Elements:NewToggle(toggleName, default, callback)
     CircleCorner.CornerRadius = UDim.new(1, 0)
     CircleCorner.Parent = IndicatorCircle
     
-    -- Função para atualizar estado
     local function UpdateToggleState()
         if toggled then
             Utility:TweenObject(ToggleIndicator, {BackgroundColor3 = CurrentTheme.Accent}, 0.2)
@@ -758,7 +730,6 @@ function Elements:NewToggle(toggleName, default, callback)
     
     UpdateToggleState()
     
-    -- Click Event (FUNCIONANDO)
     ToggleFrame.MouseButton1Click:Connect(function()
         toggled = not toggled
         UpdateToggleState()
@@ -770,14 +741,14 @@ function Elements:NewToggle(toggleName, default, callback)
     local ToggleFunctions = {}
     function ToggleFunctions:SetState(newState)
         toggled = newState
-        UpdateToggleState()        pcall(function() callback(toggled) end)
+        UpdateToggleState()
+        pcall(function() callback(toggled) end)
     end
     function ToggleFunctions:GetState()
         return toggled
     end
     
-    return ToggleFunctions
-end
+    return ToggleFunctionsend
 
 -- Slider (CORRIGIDO - Mobile + PC)
 function Elements:NewSlider(sliderName, minValue, maxValue, defaultValue, callback)
@@ -819,14 +790,14 @@ function Elements:NewSlider(sliderName, minValue, maxValue, defaultValue, callba
     SliderValue.Position = UDim2.new(1, -12, 0, 4)
     SliderValue.AnchorPoint = Vector2.new(1, 0)
     SliderValue.Size = UDim2.new(0, 50, 0, 16)
-    SliderValue.FontFace = Config.Font    SliderValue.Text = tostring(currentValue)
+    SliderValue.FontFace = Config.Font
+    SliderValue.Text = tostring(currentValue)
     SliderValue.TextColor3 = CurrentTheme.Accent
     SliderValue.TextSize = 12
     SliderValue.TextXAlignment = Enum.TextXAlignment.Right
     
     local SliderBar = Instance.new("Frame")
-    SliderBar.Name = "SliderBar"
-    SliderBar.Parent = SliderFrame
+    SliderBar.Name = "SliderBar"    SliderBar.Parent = SliderFrame
     SliderBar.BackgroundColor3 = CurrentTheme.Border
     SliderBar.Position = UDim2.new(0, 12, 0, 28)
     SliderBar.Size = UDim2.new(1, -24, 0, 6)
@@ -855,7 +826,6 @@ function Elements:NewSlider(sliderName, minValue, maxValue, defaultValue, callba
     
     UpdateSliderValue(defaultValue)
     
-    -- Mobile + PC Support
     local dragging = false
     
     SliderBar.InputBegan:Connect(function(input)
@@ -868,15 +838,15 @@ function Elements:NewSlider(sliderName, minValue, maxValue, defaultValue, callba
     
     UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or 
-                        input.UserInputType == Enum.UserInputType.Touch) then            UpdateSliderValue(((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X) * (maxValue - minValue) + minValue)
+                        input.UserInputType == Enum.UserInputType.Touch) then
+            UpdateSliderValue(((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X) * (maxValue - minValue) + minValue)
         end
     end)
     
     UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or 
            input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
+            dragging = false        end
     end)
     
     UpdateSectionSize()
@@ -907,7 +877,7 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
     DropdownFrame.BackgroundTransparency = 0.6
     DropdownFrame.BorderSizePixel = 0
     DropdownFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
-    DropdownFrame.ClipsDescendants = false  -- CORRIGIDO: false para mostrar opções
+    DropdownFrame.ClipsDescendants = false
     
     local DropdownCorner = Instance.new("UICorner")
     DropdownCorner.CornerRadius = UDim.new(0, 6)
@@ -917,15 +887,15 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
     DropdownStroke.Parent = DropdownFrame
     DropdownStroke.Thickness = 1
     DropdownStroke.Color = CurrentTheme.Border
-    DropdownStroke.Transparency = 0.5    DropdownStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    DropdownStroke.Transparency = 0.5
+    DropdownStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     
     local DropdownTitle = Instance.new("TextLabel")
     DropdownTitle.Name = "DropdownTitle"
     DropdownTitle.Parent = DropdownFrame
     DropdownTitle.BackgroundTransparency = 1
     DropdownTitle.Position = UDim2.new(0, 12, 0, 0)
-    DropdownTitle.Size = UDim2.new(0.5, 0, 1, 0)
-    DropdownTitle.FontFace = Config.Font
+    DropdownTitle.Size = UDim2.new(0.5, 0, 1, 0)    DropdownTitle.FontFace = Config.Font
     DropdownTitle.Text = dropdownName
     DropdownTitle.TextColor3 = CurrentTheme.Text
     DropdownTitle.TextSize = 13
@@ -966,16 +936,16 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
     local OptionsContainer = Instance.new("ScrollingFrame")
     OptionsContainer.Name = "OptionsContainer"
     OptionsContainer.Parent = DropdownFrame
-    OptionsContainer.BackgroundColor3 = CurrentTheme.Background    OptionsContainer.BackgroundTransparency = 0.7
+    OptionsContainer.BackgroundColor3 = CurrentTheme.Background
+    OptionsContainer.BackgroundTransparency = 0.7
     OptionsContainer.Position = UDim2.new(0.5, -5, 0, Config.Sizes.ElementHeight + 2)
     OptionsContainer.AnchorPoint = Vector2.new(0, 0)
     OptionsContainer.Size = UDim2.new(0.5, -10, 0, 0)
     OptionsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
     OptionsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
     OptionsContainer.ScrollBarThickness = 3
-    OptionsContainer.ScrollBarImageColor3 = CurrentTheme.Accent
-    OptionsContainer.Visible = false
-    OptionsContainer.ZIndex = 10  -- CORRIGIDO: ZIndex maior
+    OptionsContainer.ScrollBarImageColor3 = CurrentTheme.Accent    OptionsContainer.Visible = false
+    OptionsContainer.ZIndex = 10
     
     local OptionsCorner = Instance.new("UICorner")
     OptionsCorner.CornerRadius = UDim.new(0, 4)
@@ -991,7 +961,6 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
     OptionsPadding.PaddingTop = UDim2.new(0, 4)
     OptionsPadding.PaddingBottom = UDim2.new(0, 4)
     
-    -- Criar opções
     for index, option in ipairs(options) do
         local OptionButton = Instance.new("TextButton")
         OptionButton.Name = "Option_" .. index
@@ -1006,7 +975,7 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
         OptionButton.TextSize = 12
         OptionButton.TextXAlignment = Enum.TextXAlignment.Left
         OptionButton.AutoButtonColor = false
-        OptionButton.ZIndex = 11  -- CORRIGIDO: ZIndex maior
+        OptionButton.ZIndex = 11
         
         local OptionCorner = Instance.new("UICorner")
         OptionCorner.CornerRadius = UDim.new(0, 4)
@@ -1015,7 +984,8 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
         OptionButton.MouseButton1Click:Connect(function()
             selectedOption = option
             DropdownButton.Text = "  " .. selectedOption
-            isOpen = false            Utility:TweenObject(OptionsContainer, {Size = UDim2.new(0.5, -10, 0, 0)}, 0.2)
+            isOpen = false
+            Utility:TweenObject(OptionsContainer, {Size = UDim2.new(0.5, -10, 0, 0)}, 0.2)
             Utility:TweenObject(ArrowIcon, {Rotation = 0}, 0.2)
             task.wait(0.2)
             OptionsContainer.Visible = false
@@ -1023,9 +993,7 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
         end)
     end
     
-    -- Toggle Dropdown (CORRIGIDO)
-    DropdownButton.MouseButton1Click:Connect(function()
-        isOpen = not isOpen
+    DropdownButton.MouseButton1Click:Connect(function()        isOpen = not isOpen
         if isOpen then
             OptionsContainer.Visible = true
             local optionCount = #options
@@ -1064,7 +1032,6 @@ print("[K9 UI] Parte 3/4 Carregada")
 -- Compatível: Mobile + PC
 -- ═══════════════════════════════════════════════════════════════
 
--- Watermark
 function K9Library:NewWatermark(watermarkText)
     watermarkText = watermarkText or "K9 Library"
     
@@ -1123,7 +1090,6 @@ function K9Library:NewWatermark(watermarkText)
     return WatermarkFunctions
 end
 
--- Version
 K9Library.Version = "1.0.0"
 K9Library.Author = "K9 Development"
 
