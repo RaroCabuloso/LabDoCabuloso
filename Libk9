@@ -353,11 +353,16 @@ function K9Library:CreateLib(libName, customTheme)
     NavListLayout.SortOrder = Enum.SortOrder.LayoutOrder
     NavListLayout.Padding = UDim.new(0, 4)
     
-    local NavPadding = Instance.new("UIPadding")
-    NavPadding.Parent = Navigation    NavPadding.PaddingTop = UDim.new(0, 8)
-    NavPadding.PaddingBottom = UDim.new(0, 8)
-    NavPadding.PaddingLeft = UDim.new(0, 6)
-    NavPadding.PaddingRight = UDim.new(0, 6)
+    -- NAVEGAÇÃO PADDING
+local NavPadding = Instance.new("UIPadding")
+NavPadding.Parent = Navigation
+NavPadding.PaddingTop = UDim.new(0, 8)
+NavPadding.PaddingBottom = UDim.new(0, 8)
+NavPadding.PaddingLeft = UDim.new(0, 6)
+NavPadding.PaddingRight = UDim.new(0, 6)
+
+-- CONTEÚDO PADDING
+
     
     ContentContainer = Instance.new("ScrollingFrame")
     ContentContainer.Name = "ContentContainer"
@@ -373,11 +378,11 @@ function K9Library:CreateLib(libName, customTheme)
     ContentContainer.ClipsDescendants = true
     
     local ContentPadding = Instance.new("UIPadding")
-    ContentPadding.Parent = ContentContainer
-    ContentPadding.PaddingTop = UDim2.new(0, 10)
-    ContentPadding.PaddingBottom = UDim2.new(0, 10)
-    ContentPadding.PaddingLeft = UDim2.new(0, 10)
-    ContentPadding.PaddingRight = UDim2.new(0, 10)
+ContentPadding.Parent = ContentContainer
+ContentPadding.PaddingTop = UDim.new(0, 10)
+ContentPadding.PaddingBottom = UDim.new(0, 10)
+ContentPadding.PaddingLeft = UDim.new(0, 10)
+ContentPadding.PaddingRight = UDim.new(0, 10)
     
     local ContentListLayout = Instance.new("UIListLayout")
     ContentListLayout.Parent = ContentContainer
