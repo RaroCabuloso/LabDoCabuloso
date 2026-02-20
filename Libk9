@@ -1,6 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════
 -- ☯ K9 UI LIBRARY - GLASSMORPHISM DARK EDITION
--- Parte 1/5: Estrutura Base, Serviços e Configurações
+-- Versão Completa e Corrigida
 -- Compatível: Mobile + PC
 -- ═══════════════════════════════════════════════════════════════
 
@@ -19,14 +19,17 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
+
+-- ✅ CORREÇÃO: Mouse com verificação para mobile
+local Mouse = pcall(function() return LocalPlayer:GetMouse() end) and LocalPlayer:GetMouse() or nil
 
 -- ═══════════════════════════════════════════════════════════════
 -- 🎨 CONFIGURAÇÕES GLOBAIS
 -- ═══════════════════════════════════════════════════════════════
 
 local Config = {
-    Font = Font.new("rbxassetid://12187375716"),
+    -- ✅ CORREÇÃO: Font com fallback
+    Font = pcall(function() return Font.new("rbxassetid://12187375716") end) and Font.new("rbxassetid://12187375716") or Font.fromEnum(Enum.Font.Gotham),
     Theme = {
         Background = Color3.fromRGB(20, 20, 25),
         Glass = Color3.fromRGB(30, 30, 40),
@@ -38,16 +41,16 @@ local Config = {
         Error = Color3.fromRGB(200, 100, 100)
     },
     ParticleConfig = {
-        ParticleCount = 40,
-        Speed = 0.3,
+        ParticleCount = 30,
+        Speed = 0.2,
         ConnectionDistance = 100,
         ParticleColor = Color3.fromRGB(100, 150, 255),
         LineColor = Color3.fromRGB(100, 150, 255),
         BackgroundTransparency = 0.85,
-        MaxConnectionsPerParticle = 3
-    },
+        MaxConnectionsPerParticle = 3    },
     Sizes = {
-        MainWidth = 500,        MainHeight = 350,
+        MainWidth = 500,
+        MainHeight = 350,
         TabWidth = 140,
         ElementHeight = 36,
         CornerRadius = 10
@@ -59,75 +62,45 @@ local Config = {
 -- ═══════════════════════════════════════════════════════════════
 
 function Utility:TweenObject(obj, properties, duration, style, direction)
-    local success, err = pcall(function()
+    pcall(function()
         local tween = TweenService:Create(
             obj, 
             TweenInfo.new(duration or 0.2, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out), 
             properties
         )
         tween:Play()
-        return tween
     end)
-    if not success then
-        warn("[K9 UI] Tween Error:", err)
-    end
-end
-
-function Utility:ApplyFont(instance)
-    pcall(function()
-        if instance:IsA("TextLabel") or instance:IsA("TextButton") or instance:IsA("TextBox") then
-            instance.FontFace = Config.Font
-        end
-    end)
-end
-
-function Utility:RoundNumber(num, decimalPlaces)
-    local mult = 10^(decimalPlaces or 0)
-    return math.floor(num * mult) / mult
 end
 
 function Utility:CreateInstance(class, properties, parent)
     local success, obj = pcall(function()
         local instance = Instance.new(class)
         for prop, value in pairs(properties or {}) do
-            pcall(function()
-                instance[prop] = value
-            end)
+            pcall(function() instance[prop] = value end)
         end
-        if parent then
-            instance.Parent = parent
-        end        return instance
+        if parent then instance.Parent = parent end
+        return instance
     end)
-    if not success then
-        warn("[K9 UI] CreateInstance Error:", obj)
-        return nil
-    end
     return success and obj or nil
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- 🖱️ SISTEMA DE DRAGGING (MOBILE + PC)
+-- 🖱️ SISTEMA DE DRAGGING
 -- ═══════════════════════════════════════════════════════════════
 
 function K9Library:DraggingEnabled(frame, parent)
     parent = parent or frame
-    
     local dragging = false
     local dragInput = nil
     local mousePos = nil
     local framePos = nil
     
     local function update(input)
-        local delta = input.Position - mousePos
-        local newPosition = UDim2.new(
-            framePos.X.Scale,
-            framePos.X.Offset + delta.X,
-            framePos.Y.Scale,
-            framePos.Y.Offset + delta.Y
-        )
-        
-        pcall(function()
-            parent.Position = newPosition
+        local delta = input.Position - mousePos        pcall(function()
+            parent.Position = UDim2.new(
+                framePos.X.Scale, framePos.X.Offset + delta.X,
+                framePos.Y.Scale, framePos.Y.Offset + delta.Y
+            )
         end)
     end
     
@@ -138,14 +111,14 @@ function K9Library:DraggingEnabled(frame, parent)
                 dragging = true
                 mousePos = input.Position
                 framePos = parent.Position
-                
                 input.Changed:Connect(function()
                     if input.UserInputState == Enum.UserInputState.End then
                         dragging = false
                     end
                 end)
             end
-        end)    end)
+        end)
+    end)
     
     frame.InputChanged:Connect(function(input)
         pcall(function()
@@ -166,14 +139,13 @@ function K9Library:DraggingEnabled(frame, parent)
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- ✨ SISTEMA DE PARTÍCULAS (PARTICLE NETWORK)
+-- ✨ SISTEMA DE PARTÍCULAS
 -- ═══════════════════════════════════════════════════════════════
 
 function K9Library:CreateParticleNetwork(parent, customConfig)
     local particleConfig = {}
     for key, value in pairs(Config.ParticleConfig) do
-        particleConfig[key] = value
-    end
+        particleConfig[key] = value    end
     if customConfig then
         for key, value in pairs(customConfig) do
             particleConfig[key] = value
@@ -194,78 +166,57 @@ function K9Library:CreateParticleNetwork(parent, customConfig)
     local connections = {}
     local running = true
     
-    -- Criar partículas    for i = 1, particleConfig.ParticleCount do
+    for i = 1, particleConfig.ParticleCount do
         local particle = Utility:CreateInstance("Frame", {
             Name = "Particle_" .. i,
             BackgroundColor3 = particleConfig.ParticleColor,
             BackgroundTransparency = 0.3,
             BorderSizePixel = 0,
             Size = UDim2.new(0, 3, 0, 3),
-            Position = UDim2.new(
-                math.random() * 0.9 + 0.05,
-                0,
-                math.random() * 0.9 + 0.05,
-                0
-            ),
+            Position = UDim2.new(math.random() * 0.9 + 0.05, 0, math.random() * 0.9 + 0.05, 0),
             ZIndex = 1
         }, container)
         
-        -- Arredondar partícula
-        local corner = Utility:CreateInstance("UICorner", {
-            CornerRadius = UDim.new(1, 0)
-        }, particle)
+        Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(1, 0)}, particle)
         
         table.insert(particles, {
             Instance = particle,
             Velocity = Vector2.new(
                 (math.random() - 0.5) * particleConfig.Speed,
                 (math.random() - 0.5) * particleConfig.Speed
-            ),
-            Connections = {}
+            )
         })
     end
     
-    -- Sistema de linhas (usando ImageLabel para performance)
     local function createLine(p1, p2, transparency)
         local distance = (p1 - p2).Magnitude
         if distance == 0 then return nil end
-        
         local midpoint = (p1 + p2) / 2
         local angle = math.atan2(p2.Y - p1.Y, p2.X - p1.X)
         
-        local line = Utility:CreateInstance("Frame", {
-            BackgroundColor3 = particleConfig.LineColor,
+        return Utility:CreateInstance("Frame", {            BackgroundColor3 = particleConfig.LineColor,
             BackgroundTransparency = transparency,
             BorderSizePixel = 0,
             Size = UDim2.new(0, distance, 0, 1),
-            Position = UDim2.new(
-                0, midpoint.X - distance / 2,
-                0, midpoint.Y - 0.5
-            ),
+            Position = UDim2.new(0, midpoint.X - distance / 2, 0, midpoint.Y - 0.5),
             Rotation = math.deg(angle),
-            ZIndex = 0        }, container)
-        
-        return line
+            ZIndex = 0
+        }, container)
     end
     
-    -- Loop de atualização
     local renderConnection
-    renderConnection = RunService.RenderStepped:Connect(function(deltaTime)
+    renderConnection = RunService.RenderStepped:Connect(function()
         if not running or not container.Parent then
             if renderConnection then renderConnection:Disconnect() end
             return
         end
         
-        -- Atualizar posições das partículas
         for _, particleData in ipairs(particles) do
             local particle = particleData.Instance
             local pos = particle.Position
-            
-            -- Mover partícula
             local newX = pos.X.Offset + particleData.Velocity.X
             local newY = pos.Y.Offset + particleData.Velocity.Y
             
-            -- Rebater nas bordas
             if newX <= 0 or newX >= container.AbsoluteSize.X - 3 then
                 particleData.Velocity = Vector2.new(-particleData.Velocity.X, particleData.Velocity.Y)
             end
@@ -273,39 +224,29 @@ function K9Library:CreateParticleNetwork(parent, customConfig)
                 particleData.Velocity = Vector2.new(particleData.Velocity.X, -particleData.Velocity.Y)
             end
             
-            -- Aplicar nova posição
             pcall(function()
                 particle.Position = UDim2.new(
-                    pos.X.Scale,
-                    math.clamp(newX, 0, container.AbsoluteSize.X - 3),
-                    pos.Y.Scale,
-                    math.clamp(newY, 0, container.AbsoluteSize.Y - 3)
+                    pos.X.Scale, math.clamp(newX, 0, container.AbsoluteSize.X - 3),
+                    pos.Y.Scale, math.clamp(newY, 0, container.AbsoluteSize.Y - 3)
                 )
             end)
         end
         
-        -- Limpar conexões antigas
         for _, line in ipairs(connections) do
-            if line and line.Parent then
-                line:Destroy()
-            end
+            pcall(function() line:Destroy() end)
         end
         connections = {}
         
-        -- Criar novas conexões        local maxConnections = particleConfig.MaxConnectionsPerParticle
+        local maxConnections = particleConfig.MaxConnectionsPerParticle
         for i = 1, #particles do
             local connectionCount = 0
             for j = i + 1, #particles do
                 if connectionCount >= maxConnections then break end
-                
                 local pos1 = particles[i].Instance.AbsolutePosition + particles[i].Instance.AbsoluteSize / 2
-                local pos2 = particles[j].Instance.AbsolutePosition + particles[j].Instance.AbsoluteSize / 2
-                local distance = (pos1 - pos2).Magnitude
+                local pos2 = particles[j].Instance.AbsolutePosition + particles[j].Instance.AbsoluteSize / 2                local distance = (pos1 - pos2).Magnitude
                 
                 if distance <= particleConfig.ConnectionDistance then
-                    local transparency = 1 - (distance / particleConfig.ConnectionDistance)
-                    transparency = math.clamp(transparency, 0.2, 0.8)
-                    
+                    local transparency = math.clamp(1 - (distance / particleConfig.ConnectionDistance), 0.2, 0.8)
                     local line = createLine(pos1, pos2, transparency)
                     if line then
                         table.insert(connections, line)
@@ -316,45 +257,19 @@ function K9Library:CreateParticleNetwork(parent, customConfig)
         end
     end)
     
-    -- Função para destruir
-    local function destroy()
-        running = false
-        if renderConnection then renderConnection:Disconnect() end
-        for _, line in ipairs(connections) do
-            pcall(function() line:Destroy() end)
-        end
-        pcall(function() container:Destroy() end)
-    end
-    
-    -- Função para atualizar config
-    local function updateConfig(newConfig)
-        for key, value in pairs(newConfig) do
-            particleConfig[key] = value
-        end
-    end
-    
     return {
         Container = container,
-        Destroy = destroy,
-        UpdateConfig = updateConfig,
-        Particles = particles
+        Destroy = function()
+            running = false
+            if renderConnection then renderConnection:Disconnect() end
+            for _, line in ipairs(connections) do pcall(function() line:Destroy() end) end
+            pcall(function() container:Destroy() end)
+        end
     }
 end
 
--- ═══════════════════════════════════════════════════════════════-- 🚫 FUNÇÃO DE LIMPEZA
 -- ═══════════════════════════════════════════════════════════════
-
-function K9Library:DestroyUI(libName)
-    pcall(function()
-        local gui = CoreGui:FindFirstChild(libName)
-        if gui then
-            gui:Destroy()
-        end
-    end)
-end
-
--- ═══════════════════════════════════════════════════════════════
--- 📛 VARIÁVEIS GLOBAIS DA LIB
+-- 📛 VARIÁVEIS GLOBAIS
 -- ═══════════════════════════════════════════════════════════════
 
 local LibName = "K9_" .. tostring(math.random(1000, 9999))
@@ -363,7 +278,7 @@ local ParticleSystem = nil
 local CurrentTheme = Config.Theme
 
 -- ═══════════════════════════════════════════════════════════════
--- 🔓 FUNÇÃO DE TOGGLE UI
+-- 🔓 FUNÇÕES GLOBAIS
 -- ═══════════════════════════════════════════════════════════════
 
 function K9Library:ToggleUI()
@@ -374,57 +289,138 @@ function K9Library:ToggleUI()
     end)
 end
 
--- ═══════════════════════════════════════════════════════════════
--- 🎨 FUNÇÃO PARA MUDAR TEMA
--- ═══════════════════════════════════════════════════════════════
+function K9Library:Destroy()
+    pcall(function()
+        if ParticleSystem then ParticleSystem:Destroy() end
+        if MainGUI then MainGUI:Destroy() end    end)
+    for _, conn in ipairs(Connections) do pcall(function() conn:Disconnect() end) end
+    Connections = {}
+end
 
 function K9Library:ChangeTheme(newTheme)
     for key, value in pairs(newTheme) do
         CurrentTheme[key] = value
     end
+end
+
+-- ═══════════════════════════════════════════════════════════════
+-- 🔔 SISTEMA DE NOTIFICAÇÕES
+-- ═══════════════════════════════════════════════════════════════
+
+local NotificationContainer = nil
+
+function K9Library:Notify(title, message, duration, notifyType)
+    duration = duration or 3
+    notifyType = notifyType or "Info"
     
-    -- Atualizar objetos registrados
-    for obj, property in pairs(Objects) do
-        pcall(function()
-            if obj and obj.Parent then
-                obj[property] = CurrentTheme[property] or value
-            end
-        end)
-    endend
-
--- ═══════════════════════════════════════════════════════════════
--- ✅ FIM DA PARTE 1/5
--- Próxima parte: Criação da UI Principal (ScreenGui, Main Frame, etc)
--- ═══════════════════════════════════════════════════════════════
-
-print("[K9 UI] Parte 1/5 Carregada - Estrutura Base e Partículas")
-
-return K9Library
--- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - GLASSMORPHISM DARK EDITION
--- Parte 2/5: Criação da UI Principal
--- Compatível: Mobile + PC
--- ═══════════════════════════════════════════════════════════════
-
--- [IMPORTANTE] Esta parte continua da Parte 1/5
--- Certifique-se de ter carregado a Parte 1 primeiro
+    if not NotificationContainer then
+        NotificationContainer = Utility:CreateInstance("ScreenGui", {
+            Name = "K9_Notifications",
+            ResetOnSpawn = false,
+            ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+            DisplayOrder = 1000,
+            IgnoreGuiInset = true
+        }, CoreGui)
+        
+        Utility:CreateInstance("Frame", {
+            Name = "Container",
+            BackgroundTransparency = 1,
+            Position = UDim2.new(1, -20, 1, -20),
+            AnchorPoint = Vector2.new(1, 1),
+            Size = UDim2.new(0, 300, 0, 0)
+        }, NotificationContainer)
+    end
+    
+    local colors = {
+        Info = {Accent = Color3.fromRGB(100, 150, 255)},
+        Success = {Accent = Color3.fromRGB(100, 200, 100)},
+        Warning = {Accent = Color3.fromRGB(200, 200, 100)},
+        Error = {Accent = Color3.fromRGB(200, 100, 100)}
+    }
+    
+    local style = colors[notifyType] or colors.Info
+    local container = NotificationContainer:FindFirstChild("Container")
+    
+    local NotifyFrame = Utility:CreateInstance("Frame", {        Name = "Notification",
+        BackgroundColor3 = CurrentTheme.Glass,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 60),
+        ClipsDescendants = true
+    }, container)
+    
+    Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, 8)}, NotifyFrame)
+    Utility:CreateInstance("UIStroke", {
+        Thickness = 1, Color = style.Accent, Transparency = 0.5,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    }, NotifyFrame)
+    
+    Utility:CreateInstance("TextLabel", {
+        Name = "NotifyTitle",
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 10, 0, 5),
+        Size = UDim2.new(1, -20, 0, 20),
+        FontFace = Config.Font,
+        Text = title,
+        TextColor3 = CurrentTheme.Text,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, NotifyFrame)
+    
+    Utility:CreateInstance("TextLabel", {
+        Name = "NotifyMessage",
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 10, 0, 25),
+        Size = UDim2.new(1, -20, 0, 30),
+        FontFace = Config.Font,
+        Text = message,
+        TextColor3 = CurrentTheme.TextSecondary,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextWrapped = true
+    }, NotifyFrame)
+    
+    local ProgressFrame = Utility:CreateInstance("Frame", {
+        BackgroundColor3 = style.Accent,
+        Position = UDim2.new(0, 0, 1, 0),
+        Size = UDim2.new(1, 0, 0, 2),
+        AnchorPoint = Vector2.new(0, 1)
+    }, NotifyFrame)
+    
+    Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, 8)}, ProgressFrame)
+    
+    NotifyFrame.Position = UDim2.new(1, 20, 0, 0)
+    NotifyFrame.BackgroundTransparency = 1    
+    Utility:TweenObject(NotifyFrame, {
+        Position = UDim2.new(1, -20, 0, 0),
+        BackgroundTransparency = 0.1
+    }, 0.3)
+    
+    Utility:TweenObject(ProgressFrame, {Size = UDim2.new(0, 0, 0, 2)}, duration, Enum.EasingStyle.Linear)
+    
+    task.delay(duration, function()
+        Utility:TweenObject(NotifyFrame, {
+            Position = UDim2.new(1, 20, 0, 0),
+            BackgroundTransparency = 1
+        }, 0.3)
+        task.wait(0.3)
+        pcall(function() NotifyFrame:Destroy() end)
+    end)
+end
 
 -- ═══════════════════════════════════════════════════════════════
 -- 🏗️ FUNÇÃO PRINCIPAL: CreateLib
 -- ═══════════════════════════════════════════════════════════════
 
 function K9Library:CreateLib(libName, customTheme)
-    -- Configurar nome da lib
     LibName = libName or "K9 Library"
     
-    -- Aplicar tema customizado se fornecido
     if customTheme then
         for key, value in pairs(customTheme) do
             CurrentTheme[key] = value
         end
     end
     
-    -- Remover UIs duplicadas
     pcall(function()
         for _, gui in ipairs(CoreGui:GetChildren()) do
             if gui:IsA("ScreenGui") and gui.Name:find("K9_") then
@@ -433,10 +429,7 @@ function K9Library:CreateLib(libName, customTheme)
         end
     end)
     
-    -- ═══════════════════════════════════════════════════════════
-    -- 🖼️ CRIAÇÃO DO SCREENGUI
-    -- ═══════════════════════════════════════════════════════════
-    
+    -- ScreenGui
     MainGUI = Utility:CreateInstance("ScreenGui", {
         Name = LibName,
         ResetOnSpawn = false,
@@ -445,12 +438,8 @@ function K9Library:CreateLib(libName, customTheme)
         IgnoreGuiInset = true
     }, CoreGui)
     
-    -- ═══════════════════════════════════════════════════════════
-    -- 📦 FRAME PRINCIPAL (GLASSMORPHISM)
-    -- ═══════════════════════════════════════════════════════════
-    
+    -- MainFrame
     local MainFrame = Utility:CreateInstance("Frame", {        Name = "MainFrame",
-        Parent = MainGUI,
         BackgroundColor3 = CurrentTheme.Background,
         BackgroundTransparency = 0.15,
         BorderSizePixel = 0,
@@ -460,76 +449,21 @@ function K9Library:CreateLib(libName, customTheme)
         ClipsDescendants = true
     }, MainGUI)
     
-    -- Cantos arredondados
-    local MainCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, Config.Sizes.CornerRadius)
-    }, MainFrame)
+    Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, Config.Sizes.CornerRadius)}, MainFrame)
     
-    -- Efeito de blur (Glassmorphism)
-    local BlurEffect = Utility:CreateInstance("ImageLabel", {
-        Name = "BlurEffect",
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0),
-        Image = "rbxassetid://17789586246",
-        ImageColor3 = CurrentTheme.Glass,
-        ImageTransparency = 0.5,
-        ScaleType = Enum.ScaleType.Slice,
-        SliceCenter = Rect.new(49, 49, 450, 450)
-    }, MainFrame)
-    
-    -- Borda brilhante
-    local BorderGlow = Utility:CreateInstance("UIStroke", {
-        Name = "BorderGlow",
-        Thickness = 1,
-        Color = CurrentTheme.Accent,
-        Transparency = 0.7,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, MainFrame)
-    
-    -- Sombra
-    local ShadowHolder = Utility:CreateInstance("Frame", {
-        Name = "ShadowHolder",
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0),
-        ZIndex = 0
-    }, MainFrame)
-    
-    local Shadow = Utility:CreateInstance("ImageLabel", {
-        Name = "Shadow",
-        BackgroundTransparency = 1,
-        Image = "rbxassetid://6015897843",        ImageColor3 = Color3.fromRGB(0, 0, 0),
-        ImageTransparency = 0.5,
-        ScaleType = Enum.ScaleType.Slice,
-        SliceCenter = Rect.new(49, 49, 450, 450),
-        Size = UDim2.new(1, 47, 1, 47),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        ZIndex = -1
-    }, ShadowHolder)
-    
-    -- ═══════════════════════════════════════════════════════════
-    -- 📍 HEADER / TOP BAR
-    -- ═══════════════════════════════════════════════════════════
-    
+    -- Header
     local Header = Utility:CreateInstance("Frame", {
         Name = "Header",
-        Parent = MainFrame,
         BackgroundColor3 = CurrentTheme.Glass,
         BackgroundTransparency = 0.3,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 40),
-        Position = UDim2.new(0, 0, 0, 0)
+        Size = UDim2.new(1, 0, 0, 40)
     }, MainFrame)
     
-    local HeaderCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, Config.Sizes.CornerRadius)
-    }, Header)
+    Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, Config.Sizes.CornerRadius)}, Header)
     
-    -- Título da Lib
-    local TitleLabel = Utility:CreateInstance("TextLabel", {
+    Utility:CreateInstance("TextLabel", {
         Name = "TitleLabel",
-        Parent = Header,
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 12, 0, 0),
         Size = UDim2.new(0.6, 0, 1, 0),
@@ -537,17 +471,15 @@ function K9Library:CreateLib(libName, customTheme)
         Text = "☯ " .. LibName,
         TextColor3 = CurrentTheme.Text,
         TextSize = 16,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextStrokeTransparency = 0.5,
-        TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        TextXAlignment = Enum.TextXAlignment.Left
     }, Header)
     
-    -- Botão de Fechar
+    -- Close Button
     local CloseButton = Utility:CreateInstance("ImageButton", {
         Name = "CloseButton",
-        Parent = Header,
         BackgroundTransparency = 1,
-        Position = UDim2.new(1, -10, 0.5, 0),        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -10, 0.5, 0),
+        AnchorPoint = Vector2.new(1, 0.5),
         Size = UDim2.new(0, 24, 0, 24),
         Image = "rbxassetid://3926305904",
         ImageRectOffset = Vector2.new(284, 4),
@@ -555,37 +487,8 @@ function K9Library:CreateLib(libName, customTheme)
         ImageColor3 = CurrentTheme.Text
     }, Header)
     
-    -- Botão de Minimizar
-    local MinimizeButton = Utility:CreateInstance("ImageButton", {
-        Name = "MinimizeButton",
-        Parent = Header,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(1, -40, 0.5, 0),
-        AnchorPoint = Vector2.new(1, 0.5),
-        Size = UDim2.new(0, 24, 0, 24),
-        Image = "rbxassetid://3926307971",
-        ImageRectOffset = Vector2.new(404, 164),
-        ImageRectSize = Vector2.new(36, 36),
-        ImageColor3 = CurrentTheme.Text
-    }, Header)
-    
-    -- Linha divisória
-    local DividerLine = Utility:CreateInstance("Frame", {
-        Name = "DividerLine",
-        Parent = Header,
-        BackgroundColor3 = CurrentTheme.Border,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 0, 1, 0),
-        Size = UDim2.new(1, 0, 0, 1)
-    }, Header)
-    
-    -- ═══════════════════════════════════════════════════════════
-    -- 📑 NAVIGATION / SIDEBAR
-    -- ═══════════════════════════════════════════════════════════
-    
-    local Navigation = Utility:CreateInstance("Frame", {
-        Name = "Navigation",
-        Parent = MainFrame,
+    -- Navigation
+    local Navigation = Utility:CreateInstance("Frame", {        Name = "Navigation",
         BackgroundColor3 = CurrentTheme.Glass,
         BackgroundTransparency = 0.5,
         BorderSizePixel = 0,
@@ -593,43 +496,23 @@ function K9Library:CreateLib(libName, customTheme)
         Size = UDim2.new(0, Config.Sizes.TabWidth, 1, -40)
     }, MainFrame)
     
-    local NavCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 0, 0, Config.Sizes.CornerRadius)
-    }, Navigation)
-        -- Lista de botões de navegação
-    local NavListLayout = Utility:CreateInstance("UIListLayout", {
-        Name = "NavListLayout",
-        Parent = Navigation,
+    Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, 0, 0, Config.Sizes.CornerRadius)}, Navigation)
+    
+    Utility:CreateInstance("UIListLayout", {
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 4)
     }, Navigation)
     
-    local NavPadding = Utility:CreateInstance("UIPadding", {
-        Name = "NavPadding",
-        Parent = Navigation,
+    Utility:CreateInstance("UIPadding", {
         PaddingTop = UDim.new(0, 8),
         PaddingBottom = UDim.new(0, 8),
         PaddingLeft = UDim.new(0, 6),
         PaddingRight = UDim.new(0, 6)
     }, Navigation)
     
-    -- Linha divisória vertical
-    local NavDivider = Utility:CreateInstance("Frame", {
-        Name = "NavDivider",
-        Parent = Navigation,
-        BackgroundColor3 = CurrentTheme.Border,
-        BorderSizePixel = 0,
-        Position = UDim2.new(1, 0, 0, 0),
-        Size = UDim2.new(0, 1, 1, 0)
-    }, Navigation)
-    
-    -- ═══════════════════════════════════════════════════════════
-    -- 📄 CONTENT CONTAINER
-    -- ═══════════════════════════════════════════════════════════
-    
+    -- Content Container
     local ContentContainer = Utility:CreateInstance("ScrollingFrame", {
         Name = "ContentContainer",
-        Parent = MainFrame,
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Position = UDim2.new(0, Config.Sizes.TabWidth, 0, 40),
@@ -637,95 +520,47 @@ function K9Library:CreateLib(libName, customTheme)
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         ScrollBarThickness = 4,
-        ScrollBarImageColor3 = CurrentTheme.Accent,
-        ScrollingDirection = Enum.ScrollingDirection.Y
+        ScrollBarImageColor3 = CurrentTheme.Accent
     }, MainFrame)
     
-    local ContentPadding = Utility:CreateInstance("UIPadding", {
-        Name = "ContentPadding",
-        Parent = ContentContainer,
+    Utility:CreateInstance("UIPadding", {
         PaddingTop = UDim.new(0, 10),
-        PaddingBottom = UDim.new(0, 10),        PaddingLeft = UDim.new(0, 10),
+        PaddingBottom = UDim.new(0, 10),
+        PaddingLeft = UDim.new(0, 10),
         PaddingRight = UDim.new(0, 10)
     }, ContentContainer)
     
     local ContentListLayout = Utility:CreateInstance("UIListLayout", {
-        Name = "ContentListLayout",
-        Parent = ContentContainer,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 8)
     }, ContentContainer)
     
-    -- Container para as abas
-    local TabsFolder = Utility:CreateInstance("Folder", {
-        Name = "TabsFolder",
-        Parent = ContentContainer
-    }, ContentContainer)
+    local TabsFolder = Utility:CreateInstance("Folder", {Name = "TabsFolder"}, ContentContainer)
     
-    -- ═══════════════════════════════════════════════════════════
-    -- ✨ SISTEMA DE PARTÍCULAS NO BACKGROUND
-    -- ═══════════════════════════════════════════════════════════
+    -- Particles    ParticleSystem = K9Library:CreateParticleNetwork(MainFrame, Config.ParticleConfig)
     
-    ParticleSystem = K9Library:CreateParticleNetwork(MainFrame, Config.ParticleConfig)
-    
-    -- ═══════════════════════════════════════════════════════════
-    -- 🖱️ DRAGGING ENABLED
-    -- ═══════════════════════════════════════════════════════════
-    
+    -- Dragging
     K9Library:DraggingEnabled(Header, MainFrame)
     
-    -- ═══════════════════════════════════════════════════════════
-    -- 🔘 EVENTOS DOS BOTÕES
-    -- ═══════════════════════════════════════════════════════════
-    
-    -- Fechar UI
+    -- Close Event
     CloseButton.MouseButton1Click:Connect(function()
         Utility:TweenObject(CloseButton, {ImageTransparency = 1}, 0.1)
-        Utility:TweenObject(MainFrame, {
-            Size = UDim2.new(0, 0, 0, 0),
-            Position = UDim2.new(0.5, 0, 0.5, 0)
-        }, 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        
+        Utility:TweenObject(MainFrame, {Size = UDim2.new(0, 0, 0, 0)}, 0.3)
         task.wait(0.3)
-        if ParticleSystem then
-            ParticleSystem:Destroy()
-        end
+        if ParticleSystem then ParticleSystem:Destroy() end
         MainGUI:Destroy()
     end)
     
-    -- Minimizar UI
-    local isMinimized = false    MinimizeButton.MouseButton1Click:Connect(function()
-        isMinimized = not isMinimized
-        
-        if isMinimized then
-            Utility:TweenObject(ContentContainer, {Position = UDim2.new(0, Config.Sizes.TabWidth, 0, 40), Size = UDim2.new(1, -Config.Sizes.TabWidth, 1, -40)}, 0.3)
-            Utility:TweenObject(MainFrame, {Size = UDim2.new(0, Config.Sizes.MainWidth, 0, 40)}, 0.3)
-        else
-            Utility:TweenObject(ContentContainer, {Position = UDim2.new(0, Config.Sizes.TabWidth, 0, 40), Size = UDim2.new(1, -Config.Sizes.TabWidth, 1, -40)}, 0.3)
-            Utility:TweenObject(MainFrame, {Size = UDim2.new(0, Config.Sizes.MainWidth, 0, Config.Sizes.MainHeight)}, 0.3)
-        end
-    end)
-    
-    -- ═══════════════════════════════════════════════════════════
-    -- 📊 TABELA DE ABAS
-    -- ═══════════════════════════════════════════════════════════
-    
+    -- Tabs System
     local Tabs = {}
     local firstTab = true
     local tabButtons = {}
     
-    -- ═══════════════════════════════════════════════════════════
-    -- 🏷️ FUNÇÃO: NewTab
-    -- ═══════════════════════════════════════════════════════════
-    
     function Tabs:NewTab(tabName, tabIcon)
         tabName = tabName or "Tab"
-        tabIcon = tabIcon or ""
         
-        -- Botão da aba na navegação
         local TabButton = Utility:CreateInstance("TextButton", {
             Name = tabName .. "_TabButton",
-            Parent = Navigation,
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 36),
             FontFace = Config.Font,
@@ -736,27 +571,10 @@ function K9Library:CreateLib(libName, customTheme)
             AutoButtonColor = false
         }, Navigation)
         
-        local ButtonCorner = Utility:CreateInstance("UICorner", {
-            CornerRadius = UDim.new(0, 6)
-        }, TabButton)
+        Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, 6)}, TabButton)
         
-        -- Ícone da aba
-        if tabIcon ~= "" then
-            local TabIcon = Utility:CreateInstance("ImageLabel", {
-                Name = "TabIcon",                Parent = TabButton,
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0, 8, 0.5, 0),
-                AnchorPoint = Vector2.new(0, 0.5),
-                Size = UDim2.new(0, 18, 0, 18),
-                Image = tabIcon,
-                ImageColor3 = CurrentTheme.TextSecondary
-            }, TabButton)
-        end
-        
-        -- Indicador de seleção
         local Selector = Utility:CreateInstance("Frame", {
             Name = "Selector",
-            Parent = TabButton,
             BackgroundColor3 = CurrentTheme.Accent,
             Position = UDim2.new(0, 0, 0.5, 0),
             AnchorPoint = Vector2.new(0, 0.5),
@@ -764,101 +582,50 @@ function K9Library:CreateLib(libName, customTheme)
             Visible = false
         }, TabButton)
         
-        local SelectorCorner = Utility:CreateInstance("UICorner", {
-            CornerRadius = UDim.new(0, 2)
-        }, Selector)
+        Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, 2)}, Selector)
         
-        -- Conteúdo da aba
         local TabContent = Utility:CreateInstance("Frame", {
             Name = tabName .. "_Content",
-            Parent = TabsFolder,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 0),
+            BackgroundTransparency = 1,            Size = UDim2.new(1, 0, 0, 0),
             Visible = false
         }, TabsFolder)
         
         local TabContentLayout = Utility:CreateInstance("UIListLayout", {
-            Parent = TabContent,
             SortOrder = Enum.SortOrder.LayoutOrder,
             Padding = UDim.new(0, 6)
         }, TabContent)
         
-        local TabContentPadding = Utility:CreateInstance("UIPadding", {
-            Parent = TabContent,
-            PaddingBottom = UDim.new(0, 4)
-        }, TabContent)
-        
-        -- Configurar primeira aba como ativa
         if firstTab then
             firstTab = false
             TabContent.Visible = true
-            TabButton.BackgroundTransparency = 0.8            TabButton.TextColor3 = CurrentTheme.Text
+            TabButton.BackgroundTransparency = 0.8
+            TabButton.TextColor3 = CurrentTheme.Text
             Selector.Visible = true
-            
-            if tabIcon ~= "" then
-                TabButton:FindFirstChild("TabIcon").ImageColor3 = CurrentTheme.Text
-            end
         end
         
-        -- Evento de clique na aba
         TabButton.MouseButton1Click:Connect(function()
-            -- Esconder todo o conteúdo
             for _, content in ipairs(TabsFolder:GetChildren()) do
                 if content:IsA("Frame") then
-                    Utility:TweenObject(content, {Visible = false}, 0.1)
+                    content.Visible = false
                 end
             end
-            
-            -- Resetar todos os botões
             for _, btn in ipairs(tabButtons) do
                 Utility:TweenObject(btn, {BackgroundTransparency = 1}, 0.2)
                 Utility:TweenObject(btn, {TextColor3 = CurrentTheme.TextSecondary}, 0.2)
-                
-                local icon = btn:FindFirstChild("TabIcon")
-                if icon then
-                    Utility:TweenObject(icon, {ImageColor3 = CurrentTheme.TextSecondary}, 0.2)
-                end
-                
                 local sel = btn:FindFirstChild("Selector")
-                if sel then
-                    sel.Visible = false
-                end
+                if sel then sel.Visible = false end
             end
-            
-            -- Ativar aba atual
             TabContent.Visible = true
             Utility:TweenObject(TabButton, {BackgroundTransparency = 0.8}, 0.2)
             Utility:TweenObject(TabButton, {TextColor3 = CurrentTheme.Text}, 0.2)
-            
-            if tabIcon ~= "" then
-                Utility:TweenObject(TabButton:FindFirstChild("TabIcon"), {ImageColor3 = CurrentTheme.Text}, 0.2)
-            end
-            
             Selector.Visible = true
-            
-            -- Atualizar canvas size
             task.wait(0.1)
             ContentContainer.CanvasSize = UDim2.new(0, 0, 0, TabContentLayout.AbsoluteContentSize.Y + 20)
         end)
         
-        -- Hover effects        TabButton.MouseEnter:Connect(function()
-            if TabButton.BackgroundTransparency > 0.5 then
-                Utility:TweenObject(TabButton, {BackgroundTransparency = 0.9}, 0.15)
-            end
-        end)
-        
-        TabButton.MouseLeave:Connect(function()
-            if TabButton.BackgroundTransparency > 0.5 then
-                Utility:TweenObject(TabButton, {BackgroundTransparency = 1}, 0.15)
-            end
-        end)
-        
         table.insert(tabButtons, TabButton)
         
-        -- ═══════════════════════════════════════════════════════
-        -- 📦 FUNÇÃO: NewSection
-        -- ═══════════════════════════════════════════════════════
-        
+        -- Sections
         local Sections = {}
         
         function Sections:NewSection(sectionName)
@@ -866,90 +633,319 @@ function K9Library:CreateLib(libName, customTheme)
             
             local SectionFrame = Utility:CreateInstance("Frame", {
                 Name = sectionName .. "_Section",
-                Parent = TabContent,
                 BackgroundColor3 = CurrentTheme.Glass,
                 BackgroundTransparency = 0.7,
-                BorderSizePixel = 0,
-                Size = UDim2.new(1, 0, 0, 0),
+                BorderSizePixel = 0,                Size = UDim2.new(1, 0, 0, 0),
                 ClipsDescendants = true
             }, TabContent)
             
-            local SectionCorner = Utility:CreateInstance("UICorner", {
-                CornerRadius = UDim.new(0, 8)
+            Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, 8)}, SectionFrame)
+            Utility:CreateInstance("UIStroke", {
+                Thickness = 1, Color = CurrentTheme.Border, Transparency = 0.5,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             }, SectionFrame)
             
-            local SectionStroke = Utility:CreateInstance("UIStroke", {
-                Parent = SectionFrame,
-                Thickness = 1,
-                Color = CurrentTheme.Border,
-                Transparency = 0.5,
-                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-                LineJoinMode = Enum.LineJoinMode.Round
-            }, SectionFrame)
-            
-            -- Header da seção
-            local SectionHeader = Utility:CreateInstance("Frame", {
-                Name = "SectionHeader",
-                Parent = SectionFrame,                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 30),
-                Position = UDim2.new(0, 0, 0, 0)
-            }, SectionFrame)
-            
-            local SectionTitle = Utility:CreateInstance("TextLabel", {
+            Utility:CreateInstance("TextLabel", {
                 Name = "SectionTitle",
-                Parent = SectionHeader,
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0, 12, 0, 0),
-                Size = UDim2.new(1, -24, 1, 0),
+                Size = UDim2.new(1, -24, 0, 30),
                 FontFace = Config.Font,
                 Text = "⚡ " .. sectionName,
                 TextColor3 = CurrentTheme.Accent,
                 TextSize = 13,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                TextStrokeTransparency = 0.7
-            }, SectionHeader)
+                TextXAlignment = Enum.TextXAlignment.Left
+            }, SectionFrame)
             
-            -- Container de elementos
             local SectionContent = Utility:CreateInstance("Frame", {
                 Name = "SectionContent",
-                Parent = SectionFrame,
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0, 0, 0, 30),
                 Size = UDim2.new(1, 0, 1, -30)
             }, SectionFrame)
             
             local SectionLayout = Utility:CreateInstance("UIListLayout", {
-                Parent = SectionContent,
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Padding = UDim.new(0, 4)
             }, SectionContent)
             
-            local SectionPadding = Utility:CreateInstance("UIPadding", {
-                Parent = SectionContent,
+            Utility:CreateInstance("UIPadding", {
                 PaddingTop = UDim.new(0, 8),
                 PaddingBottom = UDim.new(0, 8),
                 PaddingLeft = UDim.new(0, 8),
                 PaddingRight = UDim.new(0, 8)
             }, SectionContent)
             
-            -- Função para atualizar tamanho
             local function UpdateSectionSize()
                 local contentSize = SectionLayout.AbsoluteContentSize.Y + 16
                 Utility:TweenObject(SectionFrame, {Size = UDim2.new(1, 0, 0, contentSize + 30)}, 0.2)
                 ContentContainer.CanvasSize = UDim2.new(0, 0, 0, TabContentLayout.AbsoluteContentSize.Y + 20)
             end
             
-            task.wait(0.1)            UpdateSectionSize()
-            
-            SectionLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateSectionSize)
-            
-            -- ═══════════════════════════════════════════════════
-            -- 🔘 ELEMENTOS DA SEÇÃO
-            -- ═══════════════════════════════════════════════════
-            
+            task.wait(0.1)
+            UpdateSectionSize()
+            SectionLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateSectionSize)            
+            -- ✅ CORREÇÃO: Elements criado dentro de NewSection
             local Elements = {}
             
-            -- [PARTE 3/5 CONTINUARÁ AQUI COM OS ELEMENTOS]
+            -- Button
+            function Elements:NewButton(buttonName, description, callback)
+                callback = callback or function() end
+                
+                local ButtonFrame = Utility:CreateInstance("TextButton", {
+                    Name = buttonName .. "_Button",
+                    BackgroundColor3 = CurrentTheme.Glass,
+                    BackgroundTransparency = 0.6,
+                    BorderSizePixel = 0,
+                    Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight),
+                    AutoButtonColor = false,
+                    FontFace = Config.Font,
+                    Text = "",
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 13
+                }, SectionContent)
+                
+                Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, 6)}, ButtonFrame)
+                Utility:CreateInstance("UIStroke", {
+                    Thickness = 1, Color = CurrentTheme.Border, Transparency = 0.5,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                }, ButtonFrame)
+                
+                Utility:CreateInstance("TextLabel", {
+                    Name = "ButtonTitle",
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 36, 0, 0),
+                    Size = UDim2.new(1, -50, 1, 0),
+                    FontFace = Config.Font,
+                    Text = buttonName,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                }, ButtonFrame)
+                
+                ButtonFrame.MouseButton1Click:Connect(function()
+                    pcall(callback)
+                end)
+                
+                UpdateSectionSize()
+                
+                return {}
+            end
+            
+            -- Toggle COM IMAGEM
+            function Elements:NewToggle(toggleName, description, default, imageId, callback)                default = default or false
+                imageId = imageId or ""
+                callback = callback or function(state) end
+                local toggled = default
+                
+                local ToggleFrame = Utility:CreateInstance("TextButton", {
+                    Name = toggleName .. "_Toggle",
+                    BackgroundColor3 = CurrentTheme.Glass,
+                    BackgroundTransparency = 0.6,
+                    BorderSizePixel = 0,
+                    Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight),
+                    AutoButtonColor = false,
+                    FontFace = Config.Font,
+                    Text = "",
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 13
+                }, SectionContent)
+                
+                Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, 6)}, ToggleFrame)
+                Utility:CreateInstance("UIStroke", {
+                    Thickness = 1, Color = CurrentTheme.Border, Transparency = 0.5,
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                }, ToggleFrame)
+                
+                -- Imagem do Toggle
+                if imageId ~= "" then
+                    Utility:CreateInstance("ImageLabel", {
+                        Name = "ToggleImage",
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 10, 0.5, 0),
+                        AnchorPoint = Vector2.new(0, 0.5),
+                        Size = UDim2.new(0, 20, 0, 20),
+                        Image = imageId,
+                        ImageColor3 = CurrentTheme.Accent
+                    }, ToggleFrame)
+                end
+                
+                Utility:CreateInstance("TextLabel", {
+                    Name = "ToggleTitle",
+                    BackgroundTransparency = 1,
+                    Position = imageId ~= "" and UDim2.new(0, 38, 0, 0) or UDim2.new(0, 14, 0, 0),
+                    Size = UDim2.new(1, -60, 1, 0),
+                    FontFace = Config.Font,
+                    Text = toggleName,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                }, ToggleFrame)
+                
+                -- Toggle Indicator                local ToggleIndicator = Utility:CreateInstance("Frame", {
+                    Name = "ToggleIndicator",
+                    BackgroundColor3 = CurrentTheme.Border,
+                    Position = UDim2.new(1, -10, 0.5, 0),
+                    AnchorPoint = Vector2.new(1, 0.5),
+                    Size = UDim2.new(0, 36, 0, 18)
+                }, ToggleFrame)
+                
+                Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(1, 0)}, ToggleIndicator)
+                
+                local IndicatorCircle = Utility:CreateInstance("Frame", {
+                    Name = "IndicatorCircle",
+                    BackgroundColor3 = CurrentTheme.Text,
+                    Position = UDim2.new(0, 2, 0.5, 0),
+                    AnchorPoint = Vector2.new(0, 0.5),
+                    Size = UDim2.new(0, 14, 0, 14)
+                }, ToggleIndicator)
+                
+                Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(1, 0)}, IndicatorCircle)
+                
+                local function UpdateToggleState()
+                    if toggled then
+                        Utility:TweenObject(ToggleIndicator, {BackgroundColor3 = CurrentTheme.Accent}, 0.2)
+                        Utility:TweenObject(IndicatorCircle, {Position = UDim2.new(1, -16, 0.5, 0)}, 0.2)
+                    else
+                        Utility:TweenObject(ToggleIndicator, {BackgroundColor3 = CurrentTheme.Border}, 0.2)
+                        Utility:TweenObject(IndicatorCircle, {Position = UDim2.new(0, 2, 0.5, 0)}, 0.2)
+                    end
+                end
+                
+                UpdateToggleState()
+                
+                ToggleFrame.MouseButton1Click:Connect(function()
+                    toggled = not toggled
+                    UpdateToggleState()
+                    pcall(function() callback(toggled) end)
+                end)
+                
+                UpdateSectionSize()
+                
+                local ToggleFunctions = {}
+                function ToggleFunctions:SetState(newState)
+                    toggled = newState
+                    UpdateToggleState()
+                    pcall(function() callback(toggled) end)
+                end
+                function ToggleFunctions:GetState()
+                    return toggled
+                end
+                                return ToggleFunctions
+            end
+            
+            -- Slider
+            function Elements:NewSlider(sliderName, description, minValue, maxValue, defaultValue, callback)
+                minValue = minValue or 0
+                maxValue = maxValue or 100
+                defaultValue = defaultValue or minValue
+                callback = callback or function(value) end
+                local currentValue = defaultValue
+                
+                local SliderFrame = Utility:CreateInstance("Frame", {
+                    Name = sliderName .. "_Slider",
+                    BackgroundColor3 = CurrentTheme.Glass,
+                    BackgroundTransparency = 0.6,
+                    BorderSizePixel = 0,
+                    Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight + 20),
+                    ClipsDescendants = true
+                }, SectionContent)
+                
+                Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, 6)}, SliderFrame)
+                
+                Utility:CreateInstance("TextLabel", {
+                    Name = "SliderTitle",
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, 4),
+                    Size = UDim2.new(1, -60, 0, 16),
+                    FontFace = Config.Font,
+                    Text = sliderName,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 12,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                }, SliderFrame)
+                
+                local SliderValue = Utility:CreateInstance("TextLabel", {
+                    Name = "SliderValue",
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(1, -10, 0, 4),
+                    AnchorPoint = Vector2.new(1, 0),
+                    Size = UDim2.new(0, 50, 0, 16),
+                    FontFace = Config.Font,
+                    Text = tostring(currentValue),
+                    TextColor3 = CurrentTheme.Accent,
+                    TextSize = 12,
+                    TextXAlignment = Enum.TextXAlignment.Right
+                }, SliderFrame)
+                
+                local SliderBar = Utility:CreateInstance("Frame", {
+                    Name = "SliderBar",
+                    BackgroundColor3 = CurrentTheme.Border,                    Position = UDim2.new(0, 10, 0, 26),
+                    Size = UDim2.new(1, -20, 0, 6)
+                }, SliderFrame)
+                
+                Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(1, 0)}, SliderBar)
+                
+                local SliderProgress = Utility:CreateInstance("Frame", {
+                    Name = "SliderProgress",
+                    BackgroundColor3 = CurrentTheme.Accent,
+                    Size = UDim2.new(0, 0, 1, 0)
+                }, SliderBar)
+                
+                Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(1, 0)}, SliderProgress)
+                
+                local function UpdateSliderValue(value)
+                    currentValue = math.clamp(value, minValue, maxValue)
+                    SliderValue.Text = tostring(math.floor(currentValue))
+                    local percentage = (currentValue - minValue) / (maxValue - minValue)
+                    Utility:TweenObject(SliderProgress, {Size = UDim2.new(percentage, 0, 1, 0)}, 0.1)
+                    pcall(function() callback(currentValue) end)
+                end
+                
+                UpdateSliderValue(defaultValue)
+                
+                UpdateSectionSize()
+                
+                local SliderFunctions = {}
+                function SliderFunctions:SetValue(value)
+                    UpdateSliderValue(value)
+                end
+                function SliderFunctions:GetValue()
+                    return currentValue
+                end
+                
+                return SliderFunctions
+            end
+            
+            -- Label
+            function Elements:NewLabel(labelText, labelType)
+                labelText = labelText or "Label"
+                
+                local LabelFrame = Utility:CreateInstance("Frame", {
+                    Name = labelText .. "_Label",
+                    BackgroundColor3 = CurrentTheme.Glass,
+                    BackgroundTransparency = 0.6,
+                    BorderSizePixel = 0,
+                    Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+                }, SectionContent)
+                
+                Utility:CreateInstance("UICorner", {CornerRadius = UDim.new(0, 6)}, LabelFrame)                
+                Utility:CreateInstance("TextLabel", {
+                    Name = "LabelText",
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, 0),
+                    Size = UDim2.new(1, -20, 1, 0),
+                    FontFace = Config.Font,
+                    Text = "  " .. labelText,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left
+                }, LabelFrame)
+                
+                UpdateSectionSize()
+                
+                return {}
+            end
             
             return Elements
         end
@@ -961,2119 +957,12 @@ function K9Library:CreateLib(libName, customTheme)
 end
 
 -- ═══════════════════════════════════════════════════════════════
--- ✅ FIM DA PARTE 2/5
--- Próxima parte: Elementos da UI (Button, Toggle, Slider, etc)
--- ═══════════════════════════════════════════════════════════════
-
-print("[K9 UI] Parte 2/5 Carregada - UI Principal Criada")
-
--- Nota: Não retorne K9Library aqui, pois ainda há mais partes
--- O retorno final será na Parte 5/5
--- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - GLASSMORPHISM DARK EDITION
--- Parte 3/5: Elementos da Interface
--- Compatível: Mobile + PC
--- ═══════════════════════════════════════════════════════════════
-
--- [IMPORTANTE] Esta parte continua das Partes 1 e 2
--- Certifique-se de ter carregado as partes anteriores primeiro
-
--- ═══════════════════════════════════════════════════════════════
--- 🔘 FUNÇÃO: NewButton
--- ═══════════════════════════════════════════════════════════════
-
-function Elements:NewButton(buttonName, description, callback)
-    buttonName = buttonName or "Button"
-    description = description or "Click to execute"
-    callback = callback or function() end
-    
-    local ButtonFrame = Utility:CreateInstance("TextButton", {
-        Name = buttonName .. "_Button",
-        Parent = SectionContent,
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.6,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight),
-        AutoButtonColor = false,
-        FontFace = Config.Font,
-        Text = "",
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 13
-    }, SectionContent)
-    
-    local ButtonCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, ButtonFrame)
-    
-    local ButtonStroke = Utility:CreateInstance("UIStroke", {
-        Parent = ButtonFrame,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, ButtonFrame)
-    
-    -- Ícone do botão
-    local ButtonIcon = Utility:CreateInstance("ImageLabel", {
-        Name = "ButtonIcon",
-        Parent = ButtonFrame,
-        BackgroundTransparency = 1,        Position = UDim2.new(0, 10, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        Size = UDim2.new(0, 18, 0, 18),
-        Image = "rbxassetid://3926305904",
-        ImageRectOffset = Vector2.new(84, 204),
-        ImageRectSize = Vector2.new(36, 36),
-        ImageColor3 = CurrentTheme.Accent
-    }, ButtonFrame)
-    
-    -- Nome do botão
-    local ButtonTitle = Utility:CreateInstance("TextLabel", {
-        Name = "ButtonTitle",
-        Parent = ButtonFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 36, 0, 0),
-        Size = UDim2.new(1, -50, 1, 0),
-        FontFace = Config.Font,
-        Text = buttonName,
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextStrokeTransparency = 0.5
-    }, ButtonFrame)
-    
-    -- Efeito de ripple
-    local RippleEffect = Utility:CreateInstance("ImageLabel", {
-        Name = "RippleEffect",
-        Parent = ButtonFrame,
-        BackgroundTransparency = 1,
-        Image = "http://www.roblox.com/asset/?id=4560909609",
-        ImageColor3 = CurrentTheme.Accent,
-        ImageTransparency = 0.7,
-        ScaleType = Enum.ScaleType.Crop,
-        Visible = false
-    }, ButtonFrame)
-    
-    -- Hover effects
-    ButtonFrame.MouseEnter:Connect(function()
-        Utility:TweenObject(ButtonFrame, {BackgroundTransparency = 0.4}, 0.15)
-        Utility:TweenObject(ButtonStroke, {Transparency = 0.3}, 0.15)
-    end)
-    
-    ButtonFrame.MouseLeave:Connect(function()
-        Utility:TweenObject(ButtonFrame, {BackgroundTransparency = 0.6}, 0.15)
-        Utility:TweenObject(ButtonStroke, {Transparency = 0.5}, 0.15)
-    end)
-    
-    -- Click event
-    ButtonFrame.MouseButton1Click:Connect(function()
-        pcall(function()            callback()
-            
-            -- Ripple effect
-            local mouse = LocalPlayer:GetMouse()
-            local ripple = RippleEffect:Clone()
-            ripple.Parent = ButtonFrame
-            ripple.Visible = true
-            
-            local x, y = (mouse.X - ripple.AbsolutePosition.X), (mouse.Y - ripple.AbsolutePosition.Y)
-            ripple.Position = UDim2.new(0, x, 0, y)
-            
-            local size = math.max(ButtonFrame.AbsoluteSize.X, ButtonFrame.AbsoluteSize.Y) * 2
-            Utility:TweenObject(ripple, {
-                Size = UDim2.new(0, size, 0, size),
-                Position = UDim2.new(0.5, -size/2, 0.5, -size/2),
-                ImageTransparency = 1
-            }, 0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-            
-            task.wait(0.4)
-            ripple:Destroy()
-        end)
-    end)
-    
-    -- Update section size
-    UpdateSectionSize()
-    
-    -- Return functions
-    local ButtonFunctions = {}
-    function ButtonFunctions:UpdateButton(newName, newDesc)
-        if newName then ButtonTitle.Text = newName end
-        if newDesc then description = newDesc end
-    end
-    
-    return ButtonFunctions
-end
-
--- ═══════════════════════════════════════════════════════════════
--- ✅ FUNÇÃO: NewToggle (COM IMAGEM)
--- ═══════════════════════════════════════════════════════════════
-
-function Elements:NewToggle(toggleName, description, default, imageId, callback)
-    toggleName = toggleName or "Toggle"
-    description = description or "Toggle option"
-    default = default or false
-    imageId = imageId or ""
-    callback = callback or function(state) end
-    
-    local toggled = default
-    
-    local ToggleFrame = Utility:CreateInstance("TextButton", {        Name = toggleName .. "_Toggle",
-        Parent = SectionContent,
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.6,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight),
-        AutoButtonColor = false,
-        FontFace = Config.Font,
-        Text = "",
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 13
-    }, SectionContent)
-    
-    local ToggleCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, ToggleFrame)
-    
-    local ToggleStroke = Utility:CreateInstance("UIStroke", {
-        Parent = ToggleFrame,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, ToggleFrame)
-    
-    -- Imagem/Ícone do Toggle (NOVO RECURSO)
-    if imageId ~= "" then
-        local ToggleImage = Utility:CreateInstance("ImageLabel", {
-            Name = "ToggleImage",
-            Parent = ToggleFrame,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 10, 0.5, 0),
-            AnchorPoint = Vector2.new(0, 0.5),
-            Size = UDim2.new(0, 20, 0, 20),
-            Image = imageId,
-            ImageColor3 = CurrentTheme.Accent
-        }, ToggleFrame)
-    end
-    
-    -- Nome do Toggle
-    local ToggleTitle = Utility:CreateInstance("TextLabel", {
-        Name = "ToggleTitle",
-        Parent = ToggleFrame,
-        BackgroundTransparency = 1,
-        Position = imageId ~= "" and UDim2.new(0, 38, 0, 0) or UDim2.new(0, 14, 0, 0),
-        Size = UDim2.new(1, -60, 1, 0),
-        FontFace = Config.Font,
-        Text = toggleName,
-        TextColor3 = CurrentTheme.Text,        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextStrokeTransparency = 0.5
-    }, ToggleFrame)
-    
-    -- Indicador de estado (Switch)
-    local ToggleIndicator = Utility:CreateInstance("Frame", {
-        Name = "ToggleIndicator",
-        Parent = ToggleFrame,
-        BackgroundColor3 = CurrentTheme.Border,
-        Position = UDim2.new(1, -10, 0.5, 0),
-        AnchorPoint = Vector2.new(1, 0.5),
-        Size = UDim2.new(0, 36, 0, 18)
-    }, ToggleFrame)
-    
-    local IndicatorCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(1, 0)
-    }, ToggleIndicator)
-    
-    local IndicatorCircle = Utility:CreateInstance("Frame", {
-        Name = "IndicatorCircle",
-        Parent = ToggleIndicator,
-        BackgroundColor3 = CurrentTheme.Text,
-        Position = UDim2.new(0, 2, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        Size = UDim2.new(0, 14, 0, 14)
-    }, ToggleIndicator)
-    
-    local CircleCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(1, 0)
-    }, IndicatorCircle)
-    
-    -- Função para atualizar estado visual
-    local function UpdateToggleState()
-        if toggled then
-            Utility:TweenObject(ToggleIndicator, {BackgroundColor3 = CurrentTheme.Accent}, 0.2)
-            Utility:TweenObject(IndicatorCircle, {Position = UDim2.new(1, -16, 0.5, 0)}, 0.2)
-        else
-            Utility:TweenObject(ToggleIndicator, {BackgroundColor3 = CurrentTheme.Border}, 0.2)
-            Utility:TweenObject(IndicatorCircle, {Position = UDim2.new(0, 2, 0.5, 0)}, 0.2)
-        end
-    end
-    
-    -- Estado inicial
-    UpdateToggleState()
-    
-    -- Hover effects
-    ToggleFrame.MouseEnter:Connect(function()
-        Utility:TweenObject(ToggleFrame, {BackgroundTransparency = 0.4}, 0.15)
-        Utility:TweenObject(ToggleStroke, {Transparency = 0.3}, 0.15)    end)
-    
-    ToggleFrame.MouseLeave:Connect(function()
-        Utility:TweenObject(ToggleFrame, {BackgroundTransparency = 0.6}, 0.15)
-        Utility:TweenObject(ToggleStroke, {Transparency = 0.5}, 0.15)
-    end)
-    
-    -- Click event
-    ToggleFrame.MouseButton1Click:Connect(function()
-        toggled = not toggled
-        UpdateToggleState()
-        pcall(function() callback(toggled) end)
-    end)
-    
-    -- Update section size
-    UpdateSectionSize()
-    
-    -- Return functions
-    local ToggleFunctions = {}
-    function ToggleFunctions:SetState(newState)
-        toggled = newState
-        UpdateToggleState()
-        pcall(function() callback(toggled) end)
-    end
-    
-    function ToggleFunctions:GetState()
-        return toggled
-    end
-    
-    function ToggleFunctions:UpdateToggle(newName, newImage)
-        if newName then ToggleTitle.Text = newName end
-        if newImage and newImage ~= "" then
-            local img = ToggleFrame:FindFirstChild("ToggleImage")
-            if img then img.Image = newImage end
-        end
-    end
-    
-    return ToggleFunctions
-end
-
--- ═══════════════════════════════════════════════════════════════
--- 📊 FUNÇÃO: NewSlider
--- ═══════════════════════════════════════════════════════════════
-
-function Elements:NewSlider(sliderName, description, minValue, maxValue, defaultValue, callback)
-    sliderName = sliderName or "Slider"
-    description = description or "Adjust value"
-    minValue = minValue or 0
-    maxValue = maxValue or 100
-    defaultValue = defaultValue or minValue    callback = callback or function(value) end
-    
-    local currentValue = defaultValue
-    
-    local SliderFrame = Utility:CreateInstance("Frame", {
-        Name = sliderName .. "_Slider",
-        Parent = SectionContent,
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.6,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight + 20),
-        ClipsDescendants = true
-    }, SectionContent)
-    
-    local SliderCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, SliderFrame)
-    
-    local SliderStroke = Utility:CreateInstance("UIStroke", {
-        Parent = SliderFrame,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, SliderFrame)
-    
-    -- Nome do Slider
-    local SliderTitle = Utility:CreateInstance("TextLabel", {
-        Name = "SliderTitle",
-        Parent = SliderFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 10, 0, 4),
-        Size = UDim2.new(1, -60, 0, 16),
-        FontFace = Config.Font,
-        Text = sliderName,
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextStrokeTransparency = 0.5
-    }, SliderFrame)
-    
-    -- Valor atual
-    local SliderValue = Utility:CreateInstance("TextLabel", {
-        Name = "SliderValue",
-        Parent = SliderFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(1, -10, 0, 4),
-        AnchorPoint = Vector2.new(1, 0),
-        Size = UDim2.new(0, 50, 0, 16),        FontFace = Config.Font,
-        Text = tostring(currentValue),
-        TextColor3 = CurrentTheme.Accent,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Right,
-        TextStrokeTransparency = 0.5
-    }, SliderFrame)
-    
-    -- Barra do slider
-    local SliderBar = Utility:CreateInstance("Frame", {
-        Name = "SliderBar",
-        Parent = SliderFrame,
-        BackgroundColor3 = CurrentTheme.Border,
-        Position = UDim2.new(0, 10, 0, 26),
-        Size = UDim2.new(1, -20, 0, 6)
-    }, SliderFrame)
-    
-    local BarCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(1, 0)
-    }, SliderBar)
-    
-    -- Barra de progresso
-    local SliderProgress = Utility:CreateInstance("Frame", {
-        Name = "SliderProgress",
-        Parent = SliderBar,
-        BackgroundColor3 = CurrentTheme.Accent,
-        Size = UDim2.new(0, 0, 1, 0)
-    }, SliderBar)
-    
-    local ProgressCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(1, 0)
-    }, SliderProgress)
-    
-    -- Botão do slider (arrastável)
-    local SliderKnob = Utility:CreateInstance("Frame", {
-        Name = "SliderKnob",
-        Parent = SliderBar,
-        BackgroundColor3 = CurrentTheme.Text,
-        Position = UDim2.new(0, 0, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        Size = UDim2.new(0, 14, 0, 14)
-    }, SliderBar)
-    
-    local KnobCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(1, 0)
-    }, SliderKnob)
-    
-    -- Função para atualizar valor
-    local function UpdateSliderValue(value)
-        currentValue = math.clamp(value, minValue, maxValue)        SliderValue.Text = tostring(math.floor(currentValue))
-        
-        local percentage = (currentValue - minValue) / (maxValue - minValue)
-        Utility:TweenObject(SliderProgress, {Size = UDim2.new(percentage, 0, 1, 0)}, 0.1)
-        Utility:TweenObject(SliderKnob, {Position = UDim2.new(percentage, 0, 0.5, 0)}, 0.1)
-        
-        pcall(function() callback(currentValue) end)
-    end
-    
-    -- Estado inicial
-    UpdateSliderValue(defaultValue)
-    
-    -- Drag functionality
-    local dragging = false
-    local mouse = LocalPlayer:GetMouse()
-    local inputService = UserInputService
-    
-    SliderBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
-           input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            UpdateSliderValue(((mouse.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X) * (maxValue - minValue) + minValue)
-        end
-    end)
-    
-    inputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or 
-                        input.UserInputType == Enum.UserInputType.Touch) then
-            UpdateSliderValue(((mouse.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X) * (maxValue - minValue) + minValue)
-        end
-    end)
-    
-    inputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
-           input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-    
-    -- Update section size
-    UpdateSectionSize()
-    
-    -- Return functions
-    local SliderFunctions = {}
-    function SliderFunctions:SetValue(value)
-        UpdateSliderValue(value)
-    end
-    
-    function SliderFunctions:GetValue()
-        return currentValue    end
-    
-    return SliderFunctions
-end
-
--- ═══════════════════════════════════════════════════════════════
--- 📝 FUNÇÃO: NewTextBox
--- ═══════════════════════════════════════════════════════════════
-
-function Elements:NewTextBox(textBoxName, description, placeholder, callback)
-    textBoxName = textBoxName or "TextBox"
-    description = description or "Enter text"
-    placeholder = placeholder or "Type here..."
-    callback = callback or function(text) end
-    
-    local TextBoxFrame = Utility:CreateInstance("Frame", {
-        Name = textBoxName .. "_TextBox",
-        Parent = SectionContent,
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.6,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight),
-        ClipsDescendants = true
-    }, SectionContent)
-    
-    local TextBoxCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, TextBoxFrame)
-    
-    local TextBoxStroke = Utility:CreateInstance("UIStroke", {
-        Parent = TextBoxFrame,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, TextBoxFrame)
-    
-    -- Nome do TextBox
-    local TextBoxTitle = Utility:CreateInstance("TextLabel", {
-        Name = "TextBoxTitle",
-        Parent = TextBoxFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 10, 0, 0),
-        Size = UDim2.new(0.5, 0, 1, 0),
-        FontFace = Config.Font,
-        Text = textBoxName,
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,        TextStrokeTransparency = 0.5
-    }, TextBoxFrame)
-    
-    -- Campo de texto
-    local TextBoxInput = Utility:CreateInstance("TextBox", {
-        Name = "TextBoxInput",
-        Parent = TextBoxFrame,
-        BackgroundColor3 = CurrentTheme.Background,
-        BackgroundTransparency = 0.5,
-        Position = UDim2.new(0.5, -5, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        Size = UDim2.new(0.5, -10, 0, 24),
-        FontFace = Config.Font,
-        PlaceholderText = placeholder,
-        PlaceholderColor3 = CurrentTheme.TextSecondary,
-        Text = "",
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Center,
-        ClearTextOnFocus = false
-    }, TextBoxFrame)
-    
-    local InputCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 4)
-    }, TextBoxInput)
-    
-    local InputStroke = Utility:CreateInstance("UIStroke", {
-        Parent = TextBoxInput,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, TextBoxInput)
-    
-    -- Hover effects
-    TextBoxFrame.MouseEnter:Connect(function()
-        Utility:TweenObject(TextBoxFrame, {BackgroundTransparency = 0.4}, 0.15)
-        Utility:TweenObject(TextBoxStroke, {Transparency = 0.3}, 0.15)
-    end)
-    
-    TextBoxFrame.MouseLeave:Connect(function()
-        Utility:TweenObject(TextBoxFrame, {BackgroundTransparency = 0.6}, 0.15)
-        Utility:TweenObject(TextBoxStroke, {Transparency = 0.5}, 0.15)
-    end)
-    
-    -- Focus events
-    TextBoxInput.Focused:Connect(function()
-        Utility:TweenObject(InputStroke, {Color = CurrentTheme.Accent, Transparency = 0.2}, 0.15)
-    end)    
-    TextBoxInput.FocusLost:Connect(function(enterPressed)
-        Utility:TweenObject(InputStroke, {Color = CurrentTheme.Border, Transparency = 0.5}, 0.15)
-        
-        if enterPressed and TextBoxInput.Text ~= "" then
-            pcall(function() callback(TextBoxInput.Text) end)
-            TextBoxInput.Text = ""
-        end
-    end)
-    
-    -- Update section size
-    UpdateSectionSize()
-    
-    -- Return functions
-    local TextBoxFunctions = {}
-    function TextBoxFunctions:GetText()
-        return TextBoxInput.Text
-    end
-    
-    function TextBoxFunctions:SetText(text)
-        TextBoxInput.Text = tostring(text)
-    end
-    
-    function TextBoxFunctions:Clear()
-        TextBoxInput.Text = ""
-    end
-    
-    return TextBoxFunctions
-end
-
--- ═══════════════════════════════════════════════════════════════
--- 📋 FUNÇÃO: NewDropdown
--- ═══════════════════════════════════════════════════════════════
-
-function Elements:NewDropdown(dropdownName, description, options, default, callback)
-    dropdownName = dropdownName or "Dropdown"
-    description = description or "Select option"
-    options = options or {"Option 1", "Option 2", "Option 3"}
-    default = default or options[1]
-    callback = callback or function(option) end
-    
-    local selectedOption = default
-    local isOpen = false
-    local dropdownHeight = Config.Sizes.ElementHeight
-    
-    local DropdownFrame = Utility:CreateInstance("Frame", {
-        Name = dropdownName .. "_Dropdown",
-        Parent = SectionContent,
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.6,        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight),
-        ClipsDescendants = true
-    }, SectionContent)
-    
-    local DropdownCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, DropdownFrame)
-    
-    local DropdownStroke = Utility:CreateInstance("UIStroke", {
-        Parent = DropdownFrame,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, DropdownFrame)
-    
-    -- Nome do Dropdown
-    local DropdownTitle = Utility:CreateInstance("TextLabel", {
-        Name = "DropdownTitle",
-        Parent = DropdownFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 10, 0, 0),
-        Size = UDim2.new(0.5, 0, 1, 0),
-        FontFace = Config.Font,
-        Text = dropdownName,
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextStrokeTransparency = 0.5
-    }, DropdownFrame)
-    
-    -- Botão do Dropdown
-    local DropdownButton = Utility:CreateInstance("TextButton", {
-        Name = "DropdownButton",
-        Parent = DropdownFrame,
-        BackgroundColor3 = CurrentTheme.Background,
-        BackgroundTransparency = 0.5,
-        Position = UDim2.new(0.5, -5, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        Size = UDim2.new(0.5, -10, 0, 24),
-        FontFace = Config.Font,
-        Text = "  " .. selectedOption,
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        AutoButtonColor = false
-    }, DropdownFrame)
-        local ButtonCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 4)
-    }, DropdownButton)
-    
-    local ButtonStroke = Utility:CreateInstance("UIStroke", {
-        Parent = DropdownButton,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, DropdownButton)
-    
-    -- Ícone de seta
-    local ArrowIcon = Utility:CreateInstance("ImageLabel", {
-        Name = "ArrowIcon",
-        Parent = DropdownButton,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(1, -8, 0.5, 0),
-        AnchorPoint = Vector2.new(1, 0.5),
-        Size = UDim2.new(0, 14, 0, 14),
-        Image = "rbxassetid://3926305904",
-        ImageRectOffset = Vector2.new(644, 364),
-        ImageRectSize = Vector2.new(36, 36),
-        ImageColor3 = CurrentTheme.TextSecondary,
-        Rotation = 0
-    }, DropdownButton)
-    
-    -- Container de opções
-    local OptionsContainer = Utility:CreateInstance("ScrollingFrame", {
-        Name = "OptionsContainer",
-        Parent = DropdownFrame,
-        BackgroundColor3 = CurrentTheme.Background,
-        BackgroundTransparency = 0.7,
-        Position = UDim2.new(0.5, -5, 0, Config.Sizes.ElementHeight + 2),
-        AnchorPoint = Vector2.new(0, 0),
-        Size = UDim2.new(0.5, -10, 0, 0),
-        CanvasSize = UDim2.new(0, 0, 0, 0),
-        AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        ScrollBarThickness = 3,
-        ScrollBarImageColor3 = CurrentTheme.Accent,
-        Visible = false,
-        ClipsDescendants = true
-    }, DropdownFrame)
-    
-    local OptionsCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 4)
-    }, OptionsContainer)
-    
-    local OptionsLayout = Utility:CreateInstance("UIListLayout", {        Parent = OptionsContainer,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 2)
-    }, OptionsContainer)
-    
-    local OptionsPadding = Utility:CreateInstance("UIPadding", {
-        Parent = OptionsContainer,
-        PaddingTop = UDim.new(0, 4),
-        PaddingBottom = UDim.new(0, 4)
-    }, OptionsContainer)
-    
-    -- Criar opções
-    for index, option in ipairs(options) do
-        local OptionButton = Utility:CreateInstance("TextButton", {
-            Name = "Option_" .. index,
-            Parent = OptionsContainer,
-            BackgroundColor3 = CurrentTheme.Glass,
-            BackgroundTransparency = 0.8,
-            Size = UDim2.new(1, -8, 0, 24),
-            Position = UDim2.new(0, 4, 0, 0),
-            FontFace = Config.Font,
-            Text = "  " .. option,
-            TextColor3 = CurrentTheme.Text,
-            TextSize = 12,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            AutoButtonColor = false
-        }, OptionsContainer)
-        
-        local OptionCorner = Utility:CreateInstance("UICorner", {
-            CornerRadius = UDim.new(0, 4)
-        }, OptionButton)
-        
-        -- Hover effect
-        OptionButton.MouseEnter:Connect(function()
-            Utility:TweenObject(OptionButton, {BackgroundTransparency = 0.6}, 0.1)
-        end)
-        
-        OptionButton.MouseLeave:Connect(function()
-            Utility:TweenObject(OptionButton, {BackgroundTransparency = 0.8}, 0.1)
-        end)
-        
-        -- Click event
-        OptionButton.MouseButton1Click:Connect(function()
-            selectedOption = option
-            DropdownButton.Text = "  " .. selectedOption
-            isOpen = false
-            
-            Utility:TweenObject(OptionsContainer, {Size = UDim2.new(0.5, -10, 0, 0)}, 0.2)
-            Utility:TweenObject(ArrowIcon, {Rotation = 0}, 0.2)
-                        task.wait(0.2)
-            OptionsContainer.Visible = false
-            
-            pcall(function() callback(selectedOption) end)
-        end)
-    end
-    
-    -- Toggle dropdown
-    DropdownButton.MouseButton1Click:Connect(function()
-        isOpen = not isOpen
-        
-        if isOpen then
-            OptionsContainer.Visible = true
-            local optionCount = #options
-            local targetHeight = math.min(optionCount * 26, 150)
-            
-            Utility:TweenObject(OptionsContainer, {Size = UDim2.new(0.5, -10, 0, targetHeight)}, 0.2)
-            Utility:TweenObject(ArrowIcon, {Rotation = 180}, 0.2)
-        else
-            Utility:TweenObject(OptionsContainer, {Size = UDim2.new(0.5, -10, 0, 0)}, 0.2)
-            Utility:TweenObject(ArrowIcon, {Rotation = 0}, 0.2)
-            
-            task.wait(0.2)
-            OptionsContainer.Visible = false
-        end
-    end)
-    
-    -- Hover effects
-    DropdownFrame.MouseEnter:Connect(function()
-        Utility:TweenObject(DropdownFrame, {BackgroundTransparency = 0.4}, 0.15)
-        Utility:TweenObject(DropdownStroke, {Transparency = 0.3}, 0.15)
-    end)
-    
-    DropdownFrame.MouseLeave:Connect(function()
-        Utility:TweenObject(DropdownFrame, {BackgroundTransparency = 0.6}, 0.15)
-        Utility:TweenObject(DropdownStroke, {Transparency = 0.5}, 0.15)
-    end)
-    
-    -- Update section size
-    UpdateSectionSize()
-    
-    -- Return functions
-    local DropdownFunctions = {}
-    function DropdownFunctions:GetSelected()
-        return selectedOption
-    end
-    
-    function DropdownFunctions:SetSelected(option)
-        if table.find(options, option) then
-            selectedOption = option            DropdownButton.Text = "  " .. selectedOption
-            pcall(function() callback(selectedOption) end)
-        end
-    end
-    
-    function DropdownFunctions:Refresh(newOptions)
-        -- Limpar opções antigas
-        for _, child in ipairs(OptionsContainer:GetChildren()) do
-            if child:IsA("TextButton") then
-                child:Destroy()
-            end
-        end
-        
-        options = newOptions or {}
-        
-        -- Criar novas opções
-        for index, option in ipairs(options) do
-            local OptionButton = Utility:CreateInstance("TextButton", {
-                Name = "Option_" .. index,
-                Parent = OptionsContainer,
-                BackgroundColor3 = CurrentTheme.Glass,
-                BackgroundTransparency = 0.8,
-                Size = UDim2.new(1, -8, 0, 24),
-                Position = UDim2.new(0, 4, 0, 0),
-                FontFace = Config.Font,
-                Text = "  " .. option,
-                TextColor3 = CurrentTheme.Text,
-                TextSize = 12,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                AutoButtonColor = false
-            }, OptionsContainer)
-            
-            local OptionCorner = Utility:CreateInstance("UICorner", {
-                CornerRadius = UDim.new(0, 4)
-            }, OptionButton)
-            
-            OptionButton.MouseEnter:Connect(function()
-                Utility:TweenObject(OptionButton, {BackgroundTransparency = 0.6}, 0.1)
-            end)
-            
-            OptionButton.MouseLeave:Connect(function()
-                Utility:TweenObject(OptionButton, {BackgroundTransparency = 0.8}, 0.1)
-            end)
-            
-            OptionButton.MouseButton1Click:Connect(function()
-                selectedOption = option
-                DropdownButton.Text = "  " .. selectedOption
-                isOpen = false
-                
-                Utility:TweenObject(OptionsContainer, {Size = UDim2.new(0.5, -10, 0, 0)}, 0.2)                Utility:TweenObject(ArrowIcon, {Rotation = 0}, 0.2)
-                
-                task.wait(0.2)
-                OptionsContainer.Visible = false
-                
-                pcall(function() callback(selectedOption) end)
-            end)
-        end
-        
-        UpdateSectionSize()
-    end
-    
-    return DropdownFunctions
-end
-
--- ═══════════════════════════════════════════════════════════════
--- ⌨️ FUNÇÃO: NewKeybind
--- ═══════════════════════════════════════════════════════════════
-
-function Elements:NewKeybind(keybindName, description, defaultKey, callback)
-    keybindName = keybindName or "Keybind"
-    description = description or "Press key to bind"
-    defaultKey = defaultKey or Enum.KeyCode.E
-    callback = callback or function() end
-    
-    local currentKey = defaultKey
-    local binding = false
-    
-    local KeybindFrame = Utility:CreateInstance("TextButton", {
-        Name = keybindName .. "_Keybind",
-        Parent = SectionContent,
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.6,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight),
-        AutoButtonColor = false,
-        FontFace = Config.Font,
-        Text = "",
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 13
-    }, SectionContent)
-    
-    local KeybindCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, KeybindFrame)
-    
-    local KeybindStroke = Utility:CreateInstance("UIStroke", {
-        Parent = KeybindFrame,
-        Thickness = 1,
-        Color = CurrentTheme.Border,        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, KeybindFrame)
-    
-    -- Ícone de teclado
-    local KeybindIcon = Utility:CreateInstance("ImageLabel", {
-        Name = "KeybindIcon",
-        Parent = KeybindFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 10, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        Size = UDim2.new(0, 18, 0, 18),
-        Image = "rbxassetid://3926305904",
-        ImageRectOffset = Vector2.new(364, 284),
-        ImageRectSize = Vector2.new(36, 36),
-        ImageColor3 = CurrentTheme.Accent
-    }, KeybindFrame)
-    
-    -- Nome do Keybind
-    local KeybindTitle = Utility:CreateInstance("TextLabel", {
-        Name = "KeybindTitle",
-        Parent = KeybindFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 36, 0, 0),
-        Size = UDim2.new(1, -100, 1, 0),
-        FontFace = Config.Font,
-        Text = keybindName,
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextStrokeTransparency = 0.5
-    }, KeybindFrame)
-    
-    -- Tecla atual
-    local KeybindKey = Utility:CreateInstance("Frame", {
-        Name = "KeybindKey",
-        Parent = KeybindFrame,
-        BackgroundColor3 = CurrentTheme.Background,
-        BackgroundTransparency = 0.5,
-        Position = UDim2.new(1, -10, 0.5, 0),
-        AnchorPoint = Vector2.new(1, 0.5),
-        Size = UDim2.new(0, 50, 0, 24)
-    }, KeybindFrame)
-    
-    local KeyCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 4)
-    }, KeybindKey)
-    
-    local KeyStroke = Utility:CreateInstance("UIStroke", {        Parent = KeybindKey,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, KeybindKey)
-    
-    local KeyText = Utility:CreateInstance("TextLabel", {
-        Name = "KeyText",
-        Parent = KeybindKey,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0),
-        FontFace = Config.Font,
-        Text = currentKey.Name,
-        TextColor3 = CurrentTheme.Accent,
-        TextSize = 12,
-        TextStrokeTransparency = 0.5
-    }, KeybindKey)
-    
-    -- Hover effects
-    KeybindFrame.MouseEnter:Connect(function()
-        Utility:TweenObject(KeybindFrame, {BackgroundTransparency = 0.4}, 0.15)
-        Utility:TweenObject(KeybindStroke, {Transparency = 0.3}, 0.15)
-    end)
-    
-    KeybindFrame.MouseLeave:Connect(function()
-        Utility:TweenObject(KeybindFrame, {BackgroundTransparency = 0.6}, 0.15)
-        Utility:TweenObject(KeybindStroke, {Transparency = 0.5}, 0.15)
-    end)
-    
-    -- Click para bind
-    KeybindFrame.MouseButton1Click:Connect(function()
-        if not binding then
-            binding = true
-            KeyText.Text = ". . ."
-            KeyText.TextColor3 = CurrentTheme.Error
-            
-            local connection
-            connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-                if not gameProcessed then
-                    if input.KeyCode.Name ~= "Unknown" then
-                        currentKey = input.KeyCode
-                        KeyText.Text = currentKey.Name
-                        KeyText.TextColor3 = CurrentTheme.Accent
-                        binding = false
-                        connection:Disconnect()
-                    end
-                end
-            end)        end
-    end)
-    
-    -- Listener para ativar keybind
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.KeyCode == currentKey and not binding then
-            pcall(function() callback() end)
-        end
-    end)
-    
-    -- Update section size
-    UpdateSectionSize()
-    
-    -- Return functions
-    local KeybindFunctions = {}
-    function KeybindFunctions:GetKey()
-        return currentKey
-    end
-    
-    function KeybindFunctions:SetKey(keyCode)
-        currentKey = keyCode
-        KeyText.Text = currentKey.Name
-    end
-    
-    return KeybindFunctions
-end
-
--- ═══════════════════════════════════════════════════════════════
--- 🏷️ FUNÇÃO: NewLabel
--- ═══════════════════════════════════════════════════════════════
-
-function Elements:NewLabel(labelText, labelType)
-    labelText = labelText or "Label"
-    labelType = labelType or "Normal" -- Normal, Info, Warning
-    
-    local labelColors = {
-        Normal = {Background = CurrentTheme.Glass, Border = CurrentTheme.Border, Text = CurrentTheme.Text, Icon = CurrentTheme.TextSecondary},
-        Info = {Background = Color3.fromRGB(3, 32, 43), Border = Color3.fromRGB(11, 136, 177), Text = CurrentTheme.Text, Icon = Color3.fromRGB(12, 170, 218)},
-        Warning = {Background = Color3.fromRGB(43, 36, 3), Border = Color3.fromRGB(165, 137, 11), Text = CurrentTheme.Text, Icon = Color3.fromRGB(214, 178, 14)}
-    }
-    
-    local colors = labelColors[labelType] or labelColors.Normal
-    
-    local LabelFrame = Utility:CreateInstance("Frame", {
-        Name = labelText .. "_Label",
-        Parent = SectionContent,
-        BackgroundColor3 = colors.Background,
-        BackgroundTransparency = 0.6,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight),        ClipsDescendants = true
-    }, SectionContent)
-    
-    local LabelCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, LabelFrame)
-    
-    local LabelStroke = Utility:CreateInstance("UIStroke", {
-        Parent = LabelFrame,
-        Thickness = 1,
-        Color = colors.Border,
-        Transparency = 0.3,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, LabelFrame)
-    
-    -- Ícone
-    local LabelIcon = Utility:CreateInstance("ImageLabel", {
-        Name = "LabelIcon",
-        Parent = LabelFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 10, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        Size = UDim2.new(0, 16, 0, 16),
-        Image = "rbxassetid://3926305904",
-        ImageColor3 = colors.Icon
-    }, LabelFrame)
-    
-    -- Texto
-    local LabelText = Utility:CreateInstance("TextLabel", {
-        Name = "LabelText",
-        Parent = LabelFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 34, 0, 0),
-        Size = UDim2.new(1, -44, 1, 0),
-        FontFace = Config.Font,
-        Text = "  " .. labelText,
-        TextColor3 = colors.Text,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextWrapped = true,
-        TextYAlignment = Enum.TextYAlignment.Center,
-        TextStrokeTransparency = 0.5
-    }, LabelFrame)
-    
-    -- Auto-resize
-    local function UpdateLabelSize()
-        local textBounds = LabelText.TextBounds
-        local newHeight = math.max(Config.Sizes.ElementHeight, textBounds.Y + 12)
-        Utility:TweenObject(LabelFrame, {Size = UDim2.new(1, 0, 0, newHeight)}, 0.2)        UpdateSectionSize()
-    end
-    
-    LabelText:GetPropertyChangedSignal("Text"):Connect(UpdateLabelSize)
-    
-    -- Return functions
-    local LabelFunctions = {}
-    function LabelFunctions:SetText(newText)
-        labelText = newText
-        LabelText.Text = "  " .. labelText
-        UpdateLabelSize()
-    end
-    
-    function LabelFunctions:GetText()
-        return labelText
-    end
-    
-    function LabelFunctions:SetType(newType)
-        local newColors = labelColors[newType] or labelColors.Normal
-        Utility:TweenObject(LabelFrame, {BackgroundColor3 = newColors.Background}, 0.2)
-        Utility:TweenObject(LabelStroke, {Color = newColors.Border}, 0.2)
-        Utility:TweenObject(LabelIcon, {ImageColor3 = newColors.Icon}, 0.2)
-    end
-    
-    return LabelFunctions
-end
-
--- ═══════════════════════════════════════════════════════════════
--- 🎨 FUNÇÃO: NewColorPicker (Básico)
--- ═══════════════════════════════════════════════════════════════
-
-function Elements:NewColorPicker(pickerName, description, defaultColor, callback)
-    pickerName = pickerName or "ColorPicker"
-    description = description or "Select color"
-    defaultColor = defaultColor or Color3.fromRGB(255, 255, 255)
-    callback = callback or function(color) end
-    
-    local currentColor = defaultColor
-    local isOpen = false
-    
-    local ColorPickerFrame = Utility:CreateInstance("Frame", {
-        Name = pickerName .. "_ColorPicker",
-        Parent = SectionContent,
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.6,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight),
-        ClipsDescendants = true
-    }, SectionContent)
-        local PickerCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, ColorPickerFrame)
-    
-    local PickerStroke = Utility:CreateInstance("UIStroke", {
-        Parent = ColorPickerFrame,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, ColorPickerFrame)
-    
-    -- Nome
-    local PickerTitle = Utility:CreateInstance("TextLabel", {
-        Name = "PickerTitle",
-        Parent = ColorPickerFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 10, 0, 0),
-        Size = UDim2.new(0.5, 0, 1, 0),
-        FontFace = Config.Font,
-        Text = pickerName,
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextStrokeTransparency = 0.5
-    }, ColorPickerFrame)
-    
-    -- Preview de cor
-    local ColorPreview = Utility:CreateInstance("Frame", {
-        Name = "ColorPreview",
-        Parent = ColorPickerFrame,
-        BackgroundColor3 = currentColor,
-        Position = UDim2.new(1, -10, 0.5, 0),
-        AnchorPoint = Vector2.new(1, 0.5),
-        Size = UDim2.new(0, 40, 0, 24)
-    }, ColorPickerFrame)
-    
-    local PreviewCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 4)
-    }, ColorPreview)
-    
-    local PreviewStroke = Utility:CreateInstance("UIStroke", {
-        Parent = ColorPreview,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, ColorPreview)    
-    -- Hover effects
-    ColorPickerFrame.MouseEnter:Connect(function()
-        Utility:TweenObject(ColorPickerFrame, {BackgroundTransparency = 0.4}, 0.15)
-        Utility:TweenObject(PickerStroke, {Transparency = 0.3}, 0.15)
-    end)
-    
-    ColorPickerFrame.MouseLeave:Connect(function()
-        Utility:TweenObject(ColorPickerFrame, {BackgroundTransparency = 0.6}, 0.15)
-        Utility:TweenObject(PickerStroke, {Transparency = 0.5}, 0.15)
-    end)
-    
-    -- Update section size
-    UpdateSectionSize()
-    
-    -- Return functions
-    local ColorPickerFunctions = {}
-    function ColorPickerFunctions:GetColor()
-        return currentColor
-    end
-    
-    function ColorPickerFunctions:SetColor(color)
-        currentColor = color
-        ColorPreview.BackgroundColor3 = currentColor
-        pcall(function() callback(currentColor) end)
-    end
-    
-    return ColorPickerFunctions
-end
-
--- ═══════════════════════════════════════════════════════════════
--- ✅ FIM DA PARTE 3/5
--- Próxima parte: Mais elementos (Separator, Title, Paragraph, etc) + Config System
--- ═══════════════════════════════════════════════════════════════
-
-print("[K9 UI] Parte 3/5 Carregada - Elementos Básicos Criados")
-
--- Nota: Não retorne nada aqui, pois ainda há mais partes
--- O retorno final será na Parte 5/5
--- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - GLASSMORPHISM DARK EDITION
--- Parte 4/5: Configuração, Notificações e Elementos Extras
--- Compatível: Mobile + PC
--- ═══════════════════════════════════════════════════════════════
-
--- [IMPORTANTE] Esta parte continua das Partes 1, 2 e 3
--- Certifique-se de ter carregado as partes anteriores primeiro
-
--- ═══════════════════════════════════════════════════════════════
--- 📝 ELEMENTOS EXTRAS (INSERIR NA TABELA 'Elements' DA PARTE 3)
--- ═══════════════════════════════════════════════════════════════
--- [INSTRUÇÃO] Copie as funções abaixo e cole dentro da tabela 
--- 'local Elements = {}' na Parte 3, antes do 'return Elements'
-
---[[
--- ➕ NewSeparator
-function Elements:NewSeparator()
-    local SeparatorFrame = Utility:CreateInstance("Frame", {
-        Name = "Separator",
-        Parent = SectionContent,
-        BackgroundColor3 = CurrentTheme.Border,
-        BackgroundTransparency = 0.5,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 1),
-        Position = UDim2.new(0, 0, 0.5, 0)
-    }, SectionContent)
-    
-    UpdateSectionSize()
-end
-
--- 📄 NewParagraph
-function Elements:NewParagraph(title, content)
-    title = title or "Paragraph"
-    content = content or ""
-    
-    local ParagraphFrame = Utility:CreateInstance("Frame", {
-        Name = "Paragraph",
-        Parent = SectionContent,
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.8,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 0),
-        ClipsDescendants = true
-    }, SectionContent)
-    
-    local ParagraphCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, ParagraphFrame)
-        local ParagraphStroke = Utility:CreateInstance("UIStroke", {
-        Parent = ParagraphFrame,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, ParagraphFrame)
-    
-    local ParagraphPadding = Utility:CreateInstance("UIPadding", {
-        Parent = ParagraphFrame,
-        PaddingTop = UDim.new(0, 10),
-        PaddingBottom = UDim.new(0, 10),
-        PaddingLeft = UDim.new(0, 10),
-        PaddingRight = UDim.new(0, 10)
-    }, ParagraphFrame)
-    
-    local ParagraphTitle = Utility:CreateInstance("TextLabel", {
-        Name = "ParagraphTitle",
-        Parent = ParagraphFrame,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 0),
-        FontFace = Config.Font,
-        Text = title,
-        TextColor3 = CurrentTheme.Accent,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextWrapped = true,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        TextStrokeTransparency = 0.5
-    }, ParagraphFrame)
-    
-    local ParagraphContent = Utility:CreateInstance("TextLabel", {
-        Name = "ParagraphContent",
-        Parent = ParagraphFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 20),
-        Size = UDim2.new(1, 0, 0, 0),
-        FontFace = Config.Font,
-        Text = content,
-        TextColor3 = CurrentTheme.TextSecondary,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextWrapped = true,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        TextStrokeTransparency = 0.7
-    }, ParagraphFrame)
-    
-    local function UpdateSize()
-        local titleBounds = ParagraphTitle.TextBounds        local contentBounds = ParagraphContent.TextBounds
-        local totalHeight = math.max(20, titleBounds.Y + contentBounds.Y + 20)
-        Utility:TweenObject(ParagraphFrame, {Size = UDim2.new(1, 0, 0, totalHeight)}, 0.2)
-        UpdateSectionSize()
-    end
-    
-    ParagraphTitle:GetPropertyChangedSignal("Text"):Connect(UpdateSize)
-    ParagraphContent:GetPropertyChangedSignal("Text"):Connect(UpdateSize)
-    
-    task.wait(0.1)
-    UpdateSize()
-    
-    local ParagraphFunctions = {}
-    function ParagraphFunctions:SetTitle(newTitle)
-        ParagraphTitle.Text = newTitle
-        UpdateSize()
-    end
-    function ParagraphFunctions:SetContent(newContent)
-        ParagraphContent.Text = newContent
-        UpdateSize()
-    end
-    return ParagraphFunctions
-end
-
--- ⚠️ NewInfoBox
-function Elements:NewInfoBox(text, infoType)
-    text = text or "Info"
-    infoType = infoType or "Info" -- Info, Warning, Error
-    
-    local colors = {
-        Info = {Background = Color3.fromRGB(3, 32, 43), Border = Color3.fromRGB(11, 136, 177), Text = Color3.fromRGB(12, 170, 218)},
-        Warning = {Background = Color3.fromRGB(43, 36, 3), Border = Color3.fromRGB(165, 137, 11), Text = Color3.fromRGB(214, 178, 14)},
-        Error = {Background = Color3.fromRGB(43, 3, 3), Border = Color3.fromRGB(177, 11, 11), Text = Color3.fromRGB(218, 12, 12)}
-    }
-    
-    local style = colors[infoType] or colors.Info
-    
-    local InfoFrame = Utility:CreateInstance("Frame", {
-        Name = "InfoBox",
-        Parent = SectionContent,
-        BackgroundColor3 = style.Background,
-        BackgroundTransparency = 0.6,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 0),
-        ClipsDescendants = true
-    }, SectionContent)
-    
-    local InfoCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, InfoFrame)    
-    local InfoStroke = Utility:CreateInstance("UIStroke", {
-        Parent = InfoFrame,
-        Thickness = 1,
-        Color = style.Border,
-        Transparency = 0.3,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, InfoFrame)
-    
-    local InfoPadding = Utility:CreateInstance("UIPadding", {
-        Parent = InfoFrame,
-        PaddingTop = UDim.new(0, 8),
-        PaddingBottom = UDim.new(0, 8),
-        PaddingLeft = UDim.new(0, 10),
-        PaddingRight = UDim.new(0, 10)
-    }, InfoFrame)
-    
-    local InfoIcon = Utility:CreateInstance("ImageLabel", {
-        Name = "InfoIcon",
-        Parent = InfoFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        Size = UDim2.new(0, 16, 0, 16),
-        Image = "rbxassetid://3926305904",
-        ImageColor3 = style.Text
-    }, InfoFrame)
-    
-    local InfoText = Utility:CreateInstance("TextLabel", {
-        Name = "InfoText",
-        Parent = InfoFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 24, 0, 0),
-        Size = UDim2.new(1, -24, 0, 0),
-        FontFace = Config.Font,
-        Text = "  " .. text,
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextWrapped = true,
-        TextYAlignment = Enum.TextYAlignment.Center,
-        TextStrokeTransparency = 0.5
-    }, InfoFrame)
-    
-    local function UpdateSize()
-        local textBounds = InfoText.TextBounds
-        local totalHeight = math.max(28, textBounds.Y + 16)
-        Utility:TweenObject(InfoFrame, {Size = UDim2.new(1, 0, 0, totalHeight)}, 0.2)
-        UpdateSectionSize()    end
-    
-    InfoText:GetPropertyChangedSignal("Text"):Connect(UpdateSize)
-    
-    task.wait(0.1)
-    UpdateSize()
-    
-    local InfoFunctions = {}
-    function InfoFunctions:SetText(newText)
-        InfoText.Text = "  " .. newText
-        UpdateSize()
-    end
-    function InfoFunctions:SetType(newType)
-        local newStyle = colors[newType] or colors.Info
-        Utility:TweenObject(InfoFrame, {BackgroundColor3 = newStyle.Background}, 0.2)
-        Utility:TweenObject(InfoStroke, {Color = newStyle.Border}, 0.2)
-        Utility:TweenObject(InfoIcon, {ImageColor3 = newStyle.Text}, 0.2)
-    end
-    return InfoFunctions
-end
-]]
-
--- ═══════════════════════════════════════════════════════════════
--- 💾 SISTEMA DE CONFIGURAÇÃO (SAVE/LOAD)
--- ═══════════════════════════════════════════════════════════════
-
-local ConfigService = {}
-local ConfigPath = "K9Library_Config.json"
-local ConfigData = {}
-local ConfigElements = {} -- Registro de elementos configuráveis
-
-function ConfigService:Save()
-    pcall(function()
-        local success, encoded = pcall(function()
-            return game:GetService("HttpService"):JSONEncode(ConfigData)
-        end)
-        
-        if success then
-            writefile(ConfigPath, encoded)
-            K9Library:Notify("Config", "Configuração salva com sucesso!", 2)
-        else
-            warn("[K9 UI] Falha ao salvar config:", encoded)
-        end
-    end)
-end
-
-function ConfigService:Load()
-    pcall(function()
-        if isfile(ConfigPath) then
-            local success, decoded = pcall(function()                return game:GetService("HttpService"):JSONDecode(readfile(ConfigPath))
-            end)
-            
-            if success and type(decoded) == "table" then
-                ConfigData = decoded
-                
-                -- Aplicar valores salvos aos elementos registrados
-                for id, element in pairs(ConfigElements) do
-                    if ConfigData[id] ~= nil then
-                        pcall(function()
-                            if element.Type == "Toggle" then
-                                element.API:SetState(ConfigData[id])
-                            elseif element.Type == "Slider" then
-                                element.API:SetValue(ConfigData[id])
-                            elseif element.Type == "Dropdown" then
-                                element.API:SetSelected(ConfigData[id])
-                            elseif element.Type == "ColorPicker" then
-                                element.API:SetColor(ConfigData[id])
-                            elseif element.Type == "TextBox" then
-                                -- TextBox geralmente não salva, mas pode ser implementado
-                            end
-                        end)
-                    end
-                end
-                
-                K9Library:Notify("Config", "Configuração carregada!", 2)
-            else
-                warn("[K9 UI] Config corrompida, criando nova...")
-                writefile(ConfigPath, "{}")
-            end
-        else
-            writefile(ConfigPath, "{}")
-        end
-    end)
-end
-
-function ConfigService:Register(id, element, elementType)
-    ConfigElements[id] = {
-        API = element,
-        Type = elementType
-    }
-end
-
--- Adicionar métodos globais à library
-K9Library.SaveConfig = function() ConfigService:Save() end
-K9Library.LoadConfig = function() ConfigService:Load() end
-
--- ═══════════════════════════════════════════════════════════════
--- 🔔 SISTEMA DE NOTIFICAÇÕES (TOAST STYLE)
--- ═══════════════════════════════════════════════════════════════
-local NotificationService = {}
-local NotificationContainer = nil
-local NotificationQueue = {}
-local MaxNotifications = 5
-
-function NotificationService:Initialize()
-    if NotificationContainer then return end
-    
-    NotificationContainer = Utility:CreateInstance("ScreenGui", {
-        Name = "K9_Notifications",
-        ResetOnSpawn = false,
-        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-        DisplayOrder = 1000,
-        IgnoreGuiInset = true
-    }, CoreGui)
-    
-    local ContainerFrame = Utility:CreateInstance("Frame", {
-        Name = "Container",
-        Parent = NotificationContainer,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(1, -20, 1, -20),
-        AnchorPoint = Vector2.new(1, 1),
-        Size = UDim2.new(0, 300, 0, 0),
-        ZIndex = 100
-    }, NotificationContainer)
-    
-    local ContainerLayout = Utility:CreateInstance("UIListLayout", {
-        Parent = ContainerFrame,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 5),
-        VerticalAlignment = Enum.VerticalAlignment.Bottom
-    }, ContainerFrame)
-    
-    local ContainerPadding = Utility:CreateInstance("UIPadding", {
-        Parent = ContainerFrame,
-        PaddingBottom = UDim.new(0, 5)
-    }, ContainerFrame)
-    
-    -- Animar entrada do container
-    ContainerFrame.Position = UDim2.new(1, 20, 1, -20)
-    Utility:TweenObject(ContainerFrame, {Position = UDim2.new(1, -20, 1, -20)}, 0.5, Enum.EasingStyle.Quad)
-end
-
-function NotificationService:Create(title, message, duration, notifyType)
-    duration = duration or 3
-    notifyType = notifyType or "Info" -- Info, Success, Warning, Error
-    
-    local colors = {
-        Info = {Accent = Color3.fromRGB(100, 150, 255), Icon = "rbxassetid://3926305904"},        Success = {Accent = Color3.fromRGB(100, 200, 100), Icon = "rbxassetid://3926309567"},
-        Warning = {Accent = Color3.fromRGB(200, 200, 100), Icon = "rbxassetid://3926307971"},
-        Error = {Accent = Color3.fromRGB(200, 100, 100), Icon = "rbxassetid://3926305904"}
-    }
-    
-    local style = colors[notifyType] or colors.Info
-    
-    local NotifyFrame = Utility:CreateInstance("Frame", {
-        Name = "Notification",
-        Parent = NotificationContainer:FindFirstChild("Container"),
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.1,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 0),
-        ClipsDescendants = true,
-        ZIndex = 100
-    }, NotificationContainer:FindFirstChild("Container"))
-    
-    local NotifyCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 8)
-    }, NotifyFrame)
-    
-    local NotifyStroke = Utility:CreateInstance("UIStroke", {
-        Parent = NotifyFrame,
-        Thickness = 1,
-        Color = style.Accent,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, NotifyFrame)
-    
-    local NotifyPadding = Utility:CreateInstance("UIPadding", {
-        Parent = NotifyFrame,
-        PaddingTop = UDim.new(0, 10),
-        PaddingBottom = UDim.new(0, 10),
-        PaddingLeft = UDim.new(0, 10),
-        PaddingRight = UDim.new(0, 10)
-    }, NotifyFrame)
-    
-    local NotifyIcon = Utility:CreateInstance("ImageLabel", {
-        Name = "NotifyIcon",
-        Parent = NotifyFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        Size = UDim2.new(0, 20, 0, 20),
-        Image = style.Icon,
-        ImageColor3 = style.Accent
-    }, NotifyFrame)
-        local NotifyTitle = Utility:CreateInstance("TextLabel", {
-        Name = "NotifyTitle",
-        Parent = NotifyFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 28, 0, 0),
-        Size = UDim2.new(1, -28, 0, 0),
-        FontFace = Config.Font,
-        Text = title,
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextStrokeTransparency = 0.5
-    }, NotifyFrame)
-    
-    local NotifyMessage = Utility:CreateInstance("TextLabel", {
-        Name = "NotifyMessage",
-        Parent = NotifyFrame,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 28, 0, 16),
-        Size = UDim2.new(1, -28, 0, 0),
-        FontFace = Config.Font,
-        Text = message,
-        TextColor3 = CurrentTheme.TextSecondary,
-        TextSize = 11,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextWrapped = true,
-        TextStrokeTransparency = 0.7
-    }, NotifyFrame)
-    
-    -- Barra de progresso
-    local ProgressFrame = Utility:CreateInstance("Frame", {
-        Name = "Progress",
-        Parent = NotifyFrame,
-        BackgroundColor3 = style.Accent,
-        Position = UDim2.new(0, 0, 1, 0),
-        Size = UDim2.new(1, 0, 0, 2),
-        AnchorPoint = Vector2.new(0, 1)
-    }, NotifyFrame)
-    
-    local function UpdateSize()
-        local titleBounds = NotifyTitle.TextBounds
-        local messageBounds = NotifyMessage.TextBounds
-        local totalHeight = math.max(40, titleBounds.Y + messageBounds.Y + 20)
-        NotifyFrame.Size = UDim2.new(1, 0, 0, totalHeight)
-    end
-    
-    NotifyTitle:GetPropertyChangedSignal("Text"):Connect(UpdateSize)
-    NotifyMessage:GetPropertyChangedSignal("Text"):Connect(UpdateSize)
-    
-    task.wait(0.1)    UpdateSize()
-    
-    -- Animar entrada
-    NotifyFrame.Position = UDim2.new(1, 20, 0, 0)
-    NotifyFrame.BackgroundTransparency = 1
-    Utility:TweenObject(NotifyFrame, {
-        Position = UDim2.new(1, -20, 0, 0),
-        BackgroundTransparency = 0.1
-    }, 0.3, Enum.EasingStyle.Quad)
-    
-    -- Animar barra de progresso
-    Utility:TweenObject(ProgressFrame, {Size = UDim2.new(0, 0, 0, 2)}, duration, Enum.EasingStyle.Linear)
-    
-    -- Destruir após duração
-    task.delay(duration, function()
-        Utility:TweenObject(NotifyFrame, {
-            Position = UDim2.new(1, 20, 0, 0),
-            BackgroundTransparency = 1
-        }, 0.3, Enum.EasingStyle.Quad)
-        
-        task.wait(0.3)
-        pcall(function() NotifyFrame:Destroy() end)
-    end)
-    
-    -- Click para fechar
-    NotifyFrame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
-           input.UserInputType == Enum.UserInputType.Touch then
-            Utility:TweenObject(NotifyFrame, {
-                Position = UDim2.new(1, 20, 0, 0),
-                BackgroundTransparency = 1
-            }, 0.2)
-            task.wait(0.2)
-            pcall(function() NotifyFrame:Destroy() end)
-        end
-    end)
-end
-
-function NotificationService:Notify(title, message, duration, notifyType)
-    NotificationService:Initialize()
-    NotificationService:Create(title, message, duration, notifyType)
-end
-
--- Adicionar método global à library
-K9Library.Notify = function(title, message, duration, type)
-    NotificationService:Notify(title, message, duration, type)
-end
-
--- ═══════════════════════════════════════════════════════════════
--- 🔗 INTEGRAR CONFIG COM ELEMENTOS (EXEMPLO)-- ═══════════════════════════════════════════════════════════════
-
--- Para usar o sistema de config, modifique os elementos na Parte 3
--- Exemplo para Toggle (adicione isso dentro de NewToggle na Parte 3):
---[[
-if configId then
-    ConfigService:Register(configId, ToggleFunctions, "Toggle")
-end
-]]
-
--- ═══════════════════════════════════════════════════════════════
--- 🧹 LIMPEZA E FINALIZAÇÃO PARCIAL
--- ═══════════════════════════════════════════════════════════════
-
--- Função para destruir tudo corretamente
-function K9Library:Destroy()
-    pcall(function()
-        if ParticleSystem then
-            ParticleSystem:Destroy()
-        end
-        if MainGUI then
-            MainGUI:Destroy()
-        end
-        if NotificationContainer then
-            NotificationContainer:Destroy()
-        end
-    end)
-    
-    -- Disconnect connections
-    for _, conn in ipairs(Connections) do
-        pcall(function() conn:Disconnect() end)
-    end
-    Connections = {}
-end
-
--- Auto-load config on library creation (opcional)
-task.spawn(function()
-    task.wait(1)
-    ConfigService:Load()
-end)
-
--- ═══════════════════════════════════════════════════════════════
--- ✅ FIM DA PARTE 4/5
--- Próxima parte: Finalização, Return Statement e Exemplo de Uso
--- ═══════════════════════════════════════════════════════════════
-
-print("[K9 UI] Parte 4/5 Carregada - Config e Notificações")
-
--- Nota: Não retorne nada aqui, pois ainda há a Parte 5
--- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - GLASSMORPHISM DARK EDITION
--- Parte 5/5: Finalização e Exemplo de Uso
--- Compatível: Mobile + PC
--- ═══════════════════════════════════════════════════════════════
-
--- [IMPORTANTE] Esta é a parte final. Após esta parte, 
--- todas as 5 partes devem ser coladas em ordem sequencial.
-
--- ═══════════════════════════════════════════════════════════════
--- 🎯 FUNÇÃO: NewWatermark
--- ═══════════════════════════════════════════════════════════════
-
-function K9Library:NewWatermark(watermarkText)
-    watermarkText = watermarkText or "K9 Library"
-    
-    local WatermarkGui = Utility:CreateInstance("ScreenGui", {
-        Name = "K9_Watermark",
-        ResetOnSpawn = false,
-        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-        DisplayOrder = 999,
-        IgnoreGuiInset = true
-    }, CoreGui)
-    
-    local WatermarkFrame = Utility:CreateInstance("Frame", {
-        Name = "Watermark",
-        Parent = WatermarkGui,
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.3,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 10, 0, 10),
-        Size = UDim2.new(0, 0, 0, 28),
-        ClipsDescendants = true
-    }, WatermarkGui)
-    
-    local WatermarkCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, WatermarkFrame)
-    
-    local WatermarkStroke = Utility:CreateInstance("UIStroke", {
-        Parent = WatermarkFrame,
-        Thickness = 1,
-        Color = CurrentTheme.Accent,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, WatermarkFrame)
-    
-    local WatermarkText = Utility:CreateInstance("TextLabel", {
-        Name = "WatermarkText",        Parent = WatermarkFrame,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0),
-        FontFace = Config.Font,
-        Text = "☯ " .. watermarkText,
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Center,
-        TextStrokeTransparency = 0.5
-    }, WatermarkFrame)
-    
-    local WatermarkPadding = Utility:CreateInstance("UIPadding", {
-        Parent = WatermarkFrame,
-        PaddingLeft = UDim.new(0, 10),
-        PaddingRight = UDim.new(0, 10)
-    }, WatermarkFrame)
-    
-    -- Animar entrada
-    Utility:TweenObject(WatermarkFrame, {Size = UDim2.new(0, 0, 0, 28)}, 0.3)
-    task.wait(0.1)
-    
-    local function UpdateSize()
-        local textBounds = WatermarkText.TextBounds
-        Utility:TweenObject(WatermarkFrame, {Size = UDim2.new(0, textBounds.X + 20, 0, 28)}, 0.2)
-    end
-    
-    WatermarkText:GetPropertyChangedSignal("Text"):Connect(UpdateSize)
-    task.wait(0.1)
-    UpdateSize()
-    
-    -- Atualizar FPS/Ping (opcional)
-    local RunService = game:GetService("RunService")
-    local lastTime = tick()
-    local frameCount = 0
-    local fps = 0
-    
-    local updateConnection
-    updateConnection = RunService.RenderStepped:Connect(function()
-        frameCount = frameCount + 1
-        local currentTime = tick()
-        
-        if currentTime - lastTime >= 1 then
-            fps = frameCount
-            frameCount = 0
-            lastTime = currentTime
-            
-            local ping = math.floor(Players.LocalPlayer:GetNetworkPing() * 1000)
-            WatermarkText.Text = "☯ " .. watermarkText .. " | FPS: " .. fps .. " | Ping: " .. ping .. "ms"
-            UpdateSize()
-        end    end)
-    
-    table.insert(Connections, updateConnection)
-    
-    -- Return functions
-    local WatermarkFunctions = {}
-    function WatermarkFunctions:SetText(newText)
-        watermarkText = newText
-        WatermarkText.Text = "☯ " .. watermarkText
-        UpdateSize()
-    end
-    
-    function WatermarkFunctions:Destroy()
-        if updateConnection then updateConnection:Disconnect() end
-        pcall(function() WatermarkGui:Destroy() end)
-    end
-    
-    return WatermarkFunctions
-end
-
--- ═══════════════════════════════════════════════════════════════
--- 🎯 FUNÇÃO: NewContextMenu (Click Detection)
--- ═══════════════════════════════════════════════════════════════
-
-function K9Library:NewContextMenu(targetGui, options)
-    options = options or {}
-    
-    local ContextGui = Utility:CreateInstance("ScreenGui", {
-        Name = "K9_ContextMenu",
-        ResetOnSpawn = false,
-        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-        DisplayOrder = 1001,
-        IgnoreGuiInset = true
-    }, CoreGui)
-    
-    local ContextFrame = Utility:CreateInstance("Frame", {
-        Name = "ContextMenu",
-        Parent = ContextGui,
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.1,
-        BorderSizePixel = 0,
-        Size = UDim2.new(0, 0, 0, 0),
-        Position = UDim2.new(0, 0, 0, 0),
-        Visible = false,
-        ClipsDescendants = true
-    }, ContextGui)
-    
-    local ContextCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 8)
-    }, ContextFrame)    
-    local ContextStroke = Utility:CreateInstance("UIStroke", {
-        Parent = ContextFrame,
-        Thickness = 1,
-        Color = CurrentTheme.Accent,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, ContextFrame)
-    
-    local ContextLayout = Utility:CreateInstance("UIListLayout", {
-        Parent = ContextFrame,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 2)
-    }, ContextFrame)
-    
-    local ContextPadding = Utility:CreateInstance("UIPadding", {
-        Parent = ContextFrame,
-        PaddingTop = UDim.new(0, 6),
-        PaddingBottom = UDim.new(0, 6),
-        PaddingLeft = UDim.new(0, 6),
-        PaddingRight = UDim.new(0, 6)
-    }, ContextFrame)
-    
-    -- Criar opções
-    for index, option in ipairs(options) do
-        local OptionButton = Utility:CreateInstance("TextButton", {
-            Name = "Option_" .. index,
-            Parent = ContextFrame,
-            BackgroundColor3 = CurrentTheme.Background,
-            BackgroundTransparency = 0.5,
-            Size = UDim2.new(1, 0, 0, 26),
-            FontFace = Config.Font,
-            Text = option.Text or "Option",
-            TextColor3 = CurrentTheme.Text,
-            TextSize = 12,
-            AutoButtonColor = false
-        }, ContextFrame)
-        
-        local OptionCorner = Utility:CreateInstance("UICorner", {
-            CornerRadius = UDim.new(0, 4)
-        }, OptionButton)
-        
-        OptionButton.MouseEnter:Connect(function()
-            Utility:TweenObject(OptionButton, {BackgroundTransparency = 0.3}, 0.1)
-        end)
-        
-        OptionButton.MouseLeave:Connect(function()
-            Utility:TweenObject(OptionButton, {BackgroundTransparency = 0.5}, 0.1)
-        end)        
-        OptionButton.MouseButton1Click:Connect(function()
-            if option.Callback then
-                pcall(option.Callback)
-            end
-            Utility:TweenObject(ContextFrame, {Size = UDim2.new(0, 0, 0, 0)}, 0.2)
-            task.wait(0.2)
-            ContextFrame.Visible = false
-        end)
-    end
-    
-    -- Detectar right click
-    local mouse = LocalPlayer:GetMouse()
-    
-    mouse.Button2Down:Connect(function()
-        local target = mouse.Target
-        
-        if target and target:IsDescendantOf(targetGui) then
-            ContextFrame.Position = UDim2.new(0, mouse.X, 0, mouse.Y)
-            ContextFrame.Visible = true
-            
-            local optionCount = #options
-            local totalHeight = optionCount * 26 + 12
-            
-            Utility:TweenObject(ContextFrame, {
-                Size = UDim2.new(0, 150, 0, totalHeight)
-            }, 0.2, Enum.EasingStyle.Quad)
-        else
-            Utility:TweenObject(ContextFrame, {Size = UDim2.new(0, 0, 0, 0)}, 0.2)
-            task.wait(0.2)
-            ContextFrame.Visible = false
-        end
-    end)
-    
-    -- Fechar ao clicar fora
-    UserInputService.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            Utility:TweenObject(ContextFrame, {Size = UDim2.new(0, 0, 0, 0)}, 0.2)
-            task.wait(0.2)
-            ContextFrame.Visible = false
-        end
-    end)
-    
-    -- Return functions
-    local ContextFunctions = {}
-    function ContextFunctions:Destroy()
-        pcall(function() ContextGui:Destroy() end)
-    end
-    
-    return ContextFunctionsend
-
--- ═══════════════════════════════════════════════════════════════
--- 🎯 FUNÇÃO: NewProgressBar
--- ═══════════════════════════════════════════════════════════════
-
-function K9Library:NewProgressBar(parent, progressName, maxValue)
-    progressName = progressName or "Progress"
-    maxValue = maxValue or 100
-    
-    local currentValue = 0
-    
-    local ProgressFrame = Utility:CreateInstance("Frame", {
-        Name = progressName .. "_Progress",
-        Parent = parent,
-        BackgroundColor3 = CurrentTheme.Glass,
-        BackgroundTransparency = 0.5,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 20),
-        ClipsDescendants = true
-    }, parent)
-    
-    local ProgressCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, ProgressFrame)
-    
-    local ProgressStroke = Utility:CreateInstance("UIStroke", {
-        Parent = ProgressFrame,
-        Thickness = 1,
-        Color = CurrentTheme.Border,
-        Transparency = 0.5,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        LineJoinMode = Enum.LineJoinMode.Round
-    }, ProgressFrame)
-    
-    local ProgressLabel = Utility:CreateInstance("TextLabel", {
-        Name = "ProgressLabel",
-        Parent = ProgressFrame,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0),
-        FontFace = Config.Font,
-        Text = progressName .. ": 0%",
-        TextColor3 = CurrentTheme.Text,
-        TextSize = 12,
-        TextStrokeTransparency = 0.5,
-        ZIndex = 2
-    }, ProgressFrame)
-    
-    local ProgressBar = Utility:CreateInstance("Frame", {
-        Name = "ProgressBar",        Parent = ProgressFrame,
-        BackgroundColor3 = CurrentTheme.Accent,
-        Size = UDim2.new(0, 0, 1, 0),
-        ZIndex = 1
-    }, ProgressFrame)
-    
-    local BarCorner = Utility:CreateInstance("UICorner", {
-        CornerRadius = UDim.new(0, 6)
-    }, ProgressBar)
-    
-    local function UpdateProgress(value)
-        currentValue = math.clamp(value, 0, maxValue)
-        local percentage = (currentValue / maxValue) * 100
-        
-        Utility:TweenObject(ProgressBar, {Size = UDim2.new(percentage / 100, 0, 1, 0)}, 0.2)
-        ProgressLabel.Text = progressName .. ": " .. math.floor(percentage) .. "%"
-    end
-    
-    local ProgressFunctions = {}
-    function ProgressFunctions:SetValue(value)
-        UpdateProgress(value)
-    end
-    
-    function ProgressFunctions:GetValue()
-        return currentValue
-    end
-    
-    function ProgressFunctions:Reset()
-        UpdateProgress(0)
-    end
-    
-    return ProgressFunctions
-end
-
--- ═══════════════════════════════════════════════════════════════
 -- 📦 RETURN FINAL DA LIBRARY
 -- ═══════════════════════════════════════════════════════════════
 
--- Registrar todos os métodos públicos
-K9Library.__index = K9Library
+K9Library.Version = "1.0.0"
+K9Library.Author = "K9 Development"
 
--- Metatable para melhor organização
-setmetatable(K9Library, {
-    __call = function(_, ...)
-        return K9Library:CreateLib(...)
-    end
-})
-
--- Versão da library
-K9Library.Version = "1.0.0"K9Library.Author = "K9 Development"
-
--- ═══════════════════════════════════════════════════════════════
--- ✅ FIM DA PARTE 5/5 - LIBRARY COMPLETA
--- ═══════════════════════════════════════════════════════════════
-
-print("[K9 UI] Parte 5/5 Carregada - Library Completa!")
-print("[K9 UI] Versão: " .. K9Library.Version)
-print("[K9 UI] Autor: " .. K9Library.Author)
+print("[K9 UI] Library Carregada - Versão: " .. K9Library.Version)
 
 return K9Library
