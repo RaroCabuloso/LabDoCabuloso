@@ -1,0 +1,435 @@
+--!strict
+--==============================================================================
+-- PARTICLE NETWORK BACKGROUND SYSTEM
+-- Versão: 1.0.0 | Otimizado para Roblox UI
+-- Autor: Senior Developer
+-- Descrição: Efeito de partículas conectadas estilo Plexus/Network
+--==============================================================================
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+--==============================================================================
+-- CONFIGURAÇÕES PADRÃO
+--==============================================================================
+local DEFAULT_CONFIG = {
+    ParticleCount = 40,              -- Quantidade de partículas (20-60 recomendado)
+    Speed = 0.3,                     -- Velocidade do movimento (0.1-1.0)
+    ConnectionDistance = 100,        -- Distância máxima para conectar (px)
+    ParticleSize = 4,                -- Tamanho de cada partícula (px)
+    ParticleColor = Color3.fromRGB(100, 150, 255),  -- Cor das partículas
+    LineColor = Color3.fromRGB(100, 150, 255),      -- Cor das linhas
+    BackgroundTransparency = 0.85,   -- Transparência das partículas (0-1)
+    LineTransparency = 0.7,          -- Transparência das linhas (0-1)
+    MaxConnectionsPerParticle = 5,   -- Limite de conexões por partícula (performance)
+    UseDrawingAPI = true             -- Usar Drawing API se disponível (mais rápido)
+}
+
+--==============================================================================
+-- MÓDULO PRINCIPAL
+--==============================================================================
+local ParticleNetwork = {}
+ParticleNetwork.__index = ParticleNetwork
+
+-- Verifica se Drawing API está disponível
+local HasDrawingAPI = false
+local DrawingTable = {}
+pcall(function()
+    if drawing then
+        HasDrawingAPI = true
+    end
+end)
+
+--==============================================================================
+-- FUNÇÃO DE CRIAÇÃO
+--==============================================================================
+function ParticleNetwork.new(parent: Frame, config: table?)
+    local self = setmetatable({}, ParticleNetwork)
+    
+    -- Merge config com defaults    self.Config = {}
+    for key, value in pairs(DEFAULT_CONFIG) do
+        self.Config[key] = value
+    end
+    if config then
+        for key, value in pairs(config) do
+            self.Config[key] = value
+        end
+    end
+    
+    -- Referências
+    self.Parent = parent
+    self.Container = nil
+    self.Particles = {}
+    self.Lines = {}
+    self.Connection = nil
+    self.Active = false
+    self.UsingDrawing = HasDrawingAPI and self.Config.UseDrawingAPI
+    
+    -- Cache de viewport
+    self.ViewportWidth = parent.AbsoluteSize.X
+    self.ViewportHeight = parent.AbsoluteSize.Y
+    
+    -- Inicializa
+    self:_CreateContainer()
+    self:_InitializeParticles()
+    self:_StartRenderLoop()
+    
+    -- Atualiza viewport on resize
+    self.Parent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+        self.ViewportWidth = self.Parent.AbsoluteSize.X
+        self.ViewportHeight = self.Parent.AbsoluteSize.Y
+        self:_ResetParticles()
+    end)
+    
+    return self
+end
+
+--==============================================================================
+-- CRIA CONTAINER TRANSPARENT
+--==============================================================================
+function ParticleNetwork:_CreateContainer()
+    if self.UsingDrawing then
+        -- Drawing API não precisa de container
+        return
+    end
+    
+    -- Cria container Frame
+    local container = Instance.new("Frame")
+    container.Name = "ParticleNetworkContainer"    container.Parent = self.Parent
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.Position = UDim2.new(0, 0, 0, 0)
+    container.BackgroundTransparency = 1
+    container.BorderSizePixel = 0
+    container.ClipsDescendants = false
+    container.ZIndex = self.Parent.ZIndex - 1  -- Fica atrás do conteúdo
+    container.Active = false  -- Não bloqueia cliques
+    
+    self.Container = container
+end
+
+--==============================================================================
+-- INICIALIZA PARTÍCULAS
+--==============================================================================
+function ParticleNetwork:_InitializeParticles()
+    self.Particles = {}
+    
+    for i = 1, self.Config.ParticleCount do
+        local particle = self:_CreateParticle()
+        table.insert(self.Particles, particle)
+    end
+end
+
+--==============================================================================
+-- CRIA UMA PARTÍCULA INDIVIDUAL
+--==============================================================================
+function ParticleNetwork:_CreateParticle()
+    local particle = {
+        X = math.random(0, self.ViewportWidth),
+        Y = math.random(0, self.ViewportHeight),
+        VX = (math.random() - 0.5) * self.Config.Speed * 2,
+        VY = (math.random() - 0.5) * self.Config.Speed * 2,
+        Object = nil,
+        LineObjects = {}
+    }
+    
+    if self.UsingDrawing then
+        -- Cria círculo com Drawing API
+        local circle = drawing.new("Circle")
+        circle.Radius = self.Config.ParticleSize
+        circle.Position = Vector2.new(particle.X, particle.Y)
+        circle.Color = self.Config.ParticleColor
+        circle.Transparency = self.Config.BackgroundTransparency
+        circle.Filled = true
+        circle.Visible = false  -- Só mostra quando ativo
+        circle.NumSides = 8  -- Otimização: menos lados = mais performance
+        particle.Object = circle
+    else
+        -- Cria ImageLabel como fallback        local circle = Instance.new("ImageLabel")
+        circle.Name = "Particle"
+        circle.Parent = self.Container
+        circle.Size = UDim2.new(0, self.Config.ParticleSize * 2, 0, self.Config.ParticleSize * 2)
+        circle.Position = UDim2.new(0, particle.X, 0, particle.Y)
+        circle.AnchorPoint = Vector2.new(0.5, 0.5)
+        circle.BackgroundTransparency = 1
+        circle.Image = "rbxassetid://10884453403"  -- Círculo simples
+        circle.ImageColor3 = self.Config.ParticleColor
+        circle.ImageTransparency = self.Config.BackgroundTransparency
+        circle.ZIndex = self.Container.ZIndex
+        circle.Active = false
+        particle.Object = circle
+    end
+    
+    return particle
+end
+
+--==============================================================================
+-- RESETA POSIÇÃO DAS PARTÍCULAS
+--==============================================================================
+function ParticleNetwork:_ResetParticles()
+    for _, particle in ipairs(self.Particles) do
+        particle.X = math.random(0, self.ViewportWidth)
+        particle.Y = math.random(0, self.ViewportHeight)
+        particle.VX = (math.random() - 0.5) * self.Config.Speed * 2
+        particle.VY = (math.random() - 0.5) * self.Config.Speed * 2
+    end
+end
+
+--==============================================================================
+-- ATUALIZA POSIÇÃO DAS PARTÍCULAS
+--==============================================================================
+function ParticleNetwork:_UpdateParticles()
+    local width, height = self.ViewportWidth, self.ViewportHeight
+    local speed = self.Config.Speed
+    
+    for _, particle in ipairs(self.Particles) do
+        -- Atualiza posição
+        particle.X = particle.X + particle.VX * speed
+        particle.Y = particle.Y + particle.VY * speed
+        
+        -- Bounce nas bordas
+        if particle.X < 0 or particle.X > width then
+            particle.VX = -particle.VX
+            particle.X = math.clamp(particle.X, 0, width)
+        end
+        if particle.Y < 0 or particle.Y > height then
+            particle.VY = -particle.VY
+            particle.Y = math.clamp(particle.Y, 0, height)        end
+        
+        -- Atualiza objeto visual
+        if self.UsingDrawing then
+            particle.Object.Position = Vector2.new(particle.X, particle.Y)
+        else
+            particle.Object.Position = UDim2.new(0, particle.X, 0, particle.Y)
+        end
+    end
+end
+
+--==============================================================================
+-- DESENHA LINHAS DE CONEXÃO
+--==============================================================================
+function ParticleNetwork:_DrawConnections()
+    local maxDist = self.Config.ConnectionDistance
+    local maxConnections = self.Config.MaxConnectionsPerParticle
+    local lineColor = self.Config.LineColor
+    local lineTransparency = self.Config.LineTransparency
+    
+    -- Limpa linhas antigas
+    self:_ClearLines()
+    
+    local connectionCount = 0
+    
+    for i = 1, #self.Particles do
+        local p1 = self.Particles[i]
+        local connectionsForThisParticle = 0
+        
+        for j = i + 1, #self.Particles do
+            if connectionsForThisParticle >= maxConnections then
+                break
+            end
+            
+            local p2 = self.Particles[j]
+            
+            -- Calcula distância (otimizado: sem sqrt até precisar)
+            local dx = p1.X - p2.X
+            local dy = p1.Y - p2.Y
+            local distSq = dx * dx + dy * dy
+            
+            if distSq <= maxDist * maxDist then
+                local dist = math.sqrt(distSq)
+                
+                -- Transparência baseada na distância (mais longe = mais transparente)
+                local alpha = 1 - (dist / maxDist)
+                
+                if self.UsingDrawing then
+                    -- Drawing API Line
+                    local line = drawing.new("Line")                    line.From = Vector2.new(p1.X, p1.Y)
+                    line.To = Vector2.new(p2.X, p2.Y)
+                    line.Color = lineColor
+                    line.Transparency = lineTransparency * (2 - alpha)
+                    line.Thickness = 1
+                    line.Visible = false
+                    table.insert(self.Lines, line)
+                else
+                    -- Fallback com Frame
+                    local line = self:_CreateLineFrame(p1, p2, alpha)
+                    table.insert(self.Lines, line)
+                end
+                
+                connectionsForThisParticle = connectionsForThisParticle + 1
+                connectionCount = connectionCount + 1
+            end
+        end
+    end
+end
+
+--==============================================================================
+-- CRIA LINHA COM FRAME (FALLBACK)
+--==============================================================================
+function ParticleNetwork:_CreateLineFrame(p1, p2, alpha)
+    local line = Instance.new("Frame")
+    line.Name = "ConnectionLine"
+    line.Parent = self.Container
+    line.BorderSizePixel = 0
+    line.ZIndex = self.Container.ZIndex
+    line.Active = false
+    
+    -- Calcula posição e rotação
+    local centerX = (p1.X + p2.X) / 2
+    local centerY = (p1.Y + p2.Y) / 2
+    local length = math.sqrt((p1.X - p2.X)^2 + (p1.Y - p2.Y)^2)
+    local angle = math.atan2(p2.Y - p1.Y, p2.X - p1.X)
+    
+    line.Size = UDim2.new(0, length, 0, 1)
+    line.Position = UDim2.new(0, centerX, 0, centerY)
+    line.AnchorPoint = Vector2.new(0.5, 0.5)
+    line.Rotation = math.deg(angle)
+    line.BackgroundColor3 = self.Config.LineColor
+    line.BackgroundTransparency = self.Config.LineTransparency * (2 - alpha)
+    
+    return line
+end
+
+--==============================================================================
+-- LIMPA TODAS AS LINHAS
+--==============================================================================function ParticleNetwork:_ClearLines()
+    for _, line in ipairs(self.Lines) do
+        if self.UsingDrawing then
+            line:Remove()
+        else
+            line:Destroy()
+        end
+    end
+    self.Lines = {}
+end
+
+--==============================================================================
+-- LOOP DE RENDERIZAÇÃO
+--==============================================================================
+function ParticleNetwork:_StartRenderLoop()
+    self.Active = true
+    
+    self.Connection = RunService.RenderStepped:Connect(function()
+        if not self.Active then return end
+        
+        -- Atualiza partículas
+        self:_UpdateParticles()
+        
+        -- Redesenha conexões (a cada frame para suavidade)
+        self:_DrawConnections()
+        
+        -- Mostra objetos
+        if self.UsingDrawing then
+            for _, particle in ipairs(self.Particles) do
+                particle.Object.Visible = true
+            end
+            for _, line in ipairs(self.Lines) do
+                line.Visible = true
+            end
+        end
+    end)
+end
+
+--==============================================================================
+-- MÉTODOS PÚBLICOS
+--==============================================================================
+
+-- Atualiza configurações em tempo real
+function ParticleNetwork:UpdateConfig(newConfig: table)
+    for key, value in pairs(newConfig) do
+        self.Config[key] = value
+    end
+    
+    -- Aplica mudanças imediatas
+    for _, particle in ipairs(self.Particles) do        if self.UsingDrawing then
+            particle.Object.Color = self.Config.ParticleColor
+            particle.Object.Transparency = self.Config.BackgroundTransparency
+            particle.Object.Radius = self.Config.ParticleSize
+        else
+            particle.Object.ImageColor3 = self.Config.ParticleColor
+            particle.Object.ImageTransparency = self.Config.BackgroundTransparency
+            particle.Object.Size = UDim2.new(0, self.Config.ParticleSize * 2, 0, self.Config.ParticleSize * 2)
+        end
+    end
+end
+
+-- Pausa o efeito
+function ParticleNetwork:Pause()
+    self.Active = false
+    if self.Connection then
+        self.Connection:Disconnect()
+    end
+end
+
+-- Retoma o efeito
+function ParticleNetwork:Resume()
+    if not self.Active then
+        self:_StartRenderLoop()
+    end
+end
+
+-- Destroi completamente
+function ParticleNetwork:Destroy()
+    self.Active = false
+    
+    -- Disconnect render loop
+    if self.Connection then
+        self.Connection:Disconnect()
+        self.Connection = nil
+    end
+    
+    -- Remove partículas
+    for _, particle in ipairs(self.Particles) do
+        if self.UsingDrawing then
+            particle.Object:Remove()
+        else
+            particle.Object:Destroy()
+        end
+    end
+    self.Particles = {}
+    
+    -- Remove linhas
+    self:_ClearLines()
+        -- Remove container
+    if self.Container then
+        self.Container:Destroy()
+        self.Container = nil
+    end
+end
+
+--==============================================================================
+-- FUNÇÃO GLOBAL DE CRIAÇÃO (FÁCIL DE USAR)
+--==============================================================================
+function CreateParticleNetwork(parent: Frame, config: table?)
+    return ParticleNetwork.new(parent, config)
+end
+
+--==============================================================================
+-- EXEMPLO DE USO
+--==============================================================================
+--[[
+    -- Uso básico:
+    local particleEffect = CreateParticleNetwork(MainFrame, {
+        ParticleCount = 35,
+        Speed = 0.4,
+        ConnectionDistance = 120,
+        ParticleColor = Color3.fromRGB(0, 255, 200),
+        LineColor = Color3.fromRGB(0, 255, 200),
+        BackgroundTransparency = 0.8
+    })
+    
+    -- Atualizar config em tempo real:
+    particleEffect:UpdateConfig({
+        Speed = 0.6,
+        ParticleColor = Color3.fromRGB(255, 100, 100)
+    })
+    
+    -- Destruir quando não precisar mais:
+    particleEffect:Destroy()
+]]
+
+return {
+    new = ParticleNetwork.new,
+    Create = CreateParticleNetwork,
+    DefaultConfig = DEFAULT_CONFIG
+}
