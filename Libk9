@@ -666,7 +666,59 @@ print("[K9 UI] Parte 2/4 Carregada")
 -- Compatível: Mobile + PC
 -- ═══════════════════════════════════════════════════════════════
 
--- Adicionar aos Elements na Parte 2
+-- Adicionar aos Elements na Parte 2 (dentro de Sections:NewSection)
+
+-- Button
+function Elements:NewButton(buttonName, callback)
+    callback = callback or function() end
+    
+    local ButtonFrame = Instance.new("TextButton")
+    ButtonFrame.Name = buttonName .. "_Button"
+    ButtonFrame.Parent = SectionContent
+    ButtonFrame.BackgroundColor3 = CurrentTheme.Glass
+    ButtonFrame.BackgroundTransparency = 0.6
+    ButtonFrame.BorderSizePixel = 0
+    ButtonFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+    ButtonFrame.AutoButtonColor = false
+    ButtonFrame.FontFace = Config.Font
+    ButtonFrame.Text = ""
+    ButtonFrame.ClipsDescendants = true
+    
+    local ButtonCorner = Instance.new("UICorner")
+    ButtonCorner.CornerRadius = UDim.new(0, 6)
+    ButtonCorner.Parent = ButtonFrame
+    
+    local ButtonStroke = Instance.new("UIStroke")
+    ButtonStroke.Parent = ButtonFrame
+    ButtonStroke.Thickness = 1
+    ButtonStroke.Color = CurrentTheme.Border
+    ButtonStroke.Transparency = 0.5
+    ButtonStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    
+    local ButtonTitle = Instance.new("TextLabel")
+    ButtonTitle.Name = "ButtonTitle"
+    ButtonTitle.Parent = ButtonFrame
+    ButtonTitle.BackgroundTransparency = 1
+    ButtonTitle.Position = UDim2.new(0, 12, 0, 0)
+    ButtonTitle.Size = UDim2.new(1, -24, 1, 0)
+    ButtonTitle.FontFace = Config.Font
+    ButtonTitle.Text = buttonName
+    ButtonTitle.TextColor3 = CurrentTheme.Text
+    ButtonTitle.TextSize = 13
+    ButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
+    
+    ButtonFrame.MouseButton1Click:Connect(function()
+        pcall(callback)
+    end)    
+    UpdateSectionSize()
+    
+    local ButtonFunctions = {}
+    function ButtonFunctions:UpdateButton(newName)
+        if newName then ButtonTitle.Text = newName end
+    end
+    
+    return ButtonFunctions
+end
 
 -- Toggle CORRIGIDO
 function Elements:NewToggle(toggleName, default, callback)
@@ -706,10 +758,10 @@ function Elements:NewToggle(toggleName, default, callback)
     ToggleTitle.FontFace = Config.Font
     ToggleTitle.Text = toggleName
     ToggleTitle.TextColor3 = CurrentTheme.Text
-    ToggleTitle.TextSize = 13
-    ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
+    ToggleTitle.TextSize = 13    ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
     
-    -- Toggle Indicator CORRIGIDO    local ToggleIndicator = Instance.new("Frame")
+    -- Toggle Indicator CORRIGIDO
+    local ToggleIndicator = Instance.new("Frame")
     ToggleIndicator.Name = "ToggleIndicator"
     ToggleIndicator.Parent = ToggleFrame
     ToggleIndicator.BackgroundColor3 = CurrentTheme.Border
@@ -755,10 +807,10 @@ function Elements:NewToggle(toggleName, default, callback)
     
     UpdateSectionSize()
     
-    local ToggleFunctions = {}
-    function ToggleFunctions:SetState(newState)
+    local ToggleFunctions = {}    function ToggleFunctions:SetState(newState)
         toggled = newState
-        UpdateToggleState()        pcall(function() callback(toggled) end)
+        UpdateToggleState()
+        pcall(function() callback(toggled) end)
     end
     function ToggleFunctions:GetState()
         return toggled
@@ -804,10 +856,10 @@ function Elements:NewSlider(sliderName, minValue, maxValue, defaultValue, callba
     SliderValue.Name = "SliderValue"
     SliderValue.Parent = SliderFrame
     SliderValue.BackgroundTransparency = 1
-    SliderValue.Position = UDim2.new(1, -10, 0, 4)
-    SliderValue.AnchorPoint = Vector2.new(1, 0)
+    SliderValue.Position = UDim2.new(1, -10, 0, 4)    SliderValue.AnchorPoint = Vector2.new(1, 0)
     SliderValue.Size = UDim2.new(0, 50, 0, 16)
-    SliderValue.FontFace = Config.Font    SliderValue.Text = tostring(currentValue)
+    SliderValue.FontFace = Config.Font
+    SliderValue.Text = tostring(currentValue)
     SliderValue.TextColor3 = CurrentTheme.Accent
     SliderValue.TextSize = 12
     SliderValue.TextXAlignment = Enum.TextXAlignment.Right
@@ -843,7 +895,7 @@ function Elements:NewSlider(sliderName, minValue, maxValue, defaultValue, callba
     
     UpdateSliderValue(defaultValue)
     
-    -- Drag functionality
+    -- Drag functionality MOBILE + PC
     local dragging = false
     
     SliderBar.InputBegan:Connect(function(input)
@@ -853,10 +905,10 @@ function Elements:NewSlider(sliderName, minValue, maxValue, defaultValue, callba
             local mouse = LocalPlayer:GetMouse() or {X = input.Position.X}
             UpdateSliderValue(((mouse.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X) * (maxValue - minValue) + minValue)
         end
-    end)
-    
+    end)    
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or                         input.UserInputType == Enum.UserInputType.Touch) then
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or 
+                        input.UserInputType == Enum.UserInputType.Touch) then
             local mouse = LocalPlayer:GetMouse() or {X = input.Position.X}
             UpdateSliderValue(((mouse.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X) * (maxValue - minValue) + minValue)
         end
@@ -902,10 +954,10 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
     local DropdownCorner = Instance.new("UICorner")
     DropdownCorner.CornerRadius = UDim.new(0, 6)
     DropdownCorner.Parent = DropdownFrame
-    
-    local DropdownStroke = Instance.new("UIStroke")
+        local DropdownStroke = Instance.new("UIStroke")
     DropdownStroke.Parent = DropdownFrame
-    DropdownStroke.Thickness = 1    DropdownStroke.Color = CurrentTheme.Border
+    DropdownStroke.Thickness = 1
+    DropdownStroke.Color = CurrentTheme.Border
     DropdownStroke.Transparency = 0.5
     DropdownStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     
@@ -951,10 +1003,10 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
     ArrowIcon.Image = "rbxassetid://3926305904"
     ArrowIcon.ImageRectOffset = Vector2.new(644, 364)
     ArrowIcon.ImageRectSize = Vector2.new(36, 36)
-    ArrowIcon.ImageColor3 = CurrentTheme.TextSecondary
-    ArrowIcon.Rotation = 0
+    ArrowIcon.ImageColor3 = CurrentTheme.TextSecondary    ArrowIcon.Rotation = 0
     
-    -- Options Container CORRIGIDO    local OptionsContainer = Instance.new("ScrollingFrame")
+    -- Options Container CORRIGIDO
+    local OptionsContainer = Instance.new("ScrollingFrame")
     OptionsContainer.Name = "OptionsContainer"
     OptionsContainer.Parent = DropdownFrame
     OptionsContainer.BackgroundColor3 = CurrentTheme.Background
@@ -1000,10 +1052,10 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
         OptionButton.AutoButtonColor = false
         
         local OptionCorner = Instance.new("UICorner")
-        OptionCorner.CornerRadius = UDim.new(0, 4)
-        OptionCorner.Parent = OptionButton
+        OptionCorner.CornerRadius = UDim.new(0, 4)        OptionCorner.Parent = OptionButton
         
-        OptionButton.MouseButton1Click:Connect(function()            selectedOption = option
+        OptionButton.MouseButton1Click:Connect(function()
+            selectedOption = option
             DropdownButton.Text = " " .. selectedOption
             isOpen = false
             Utility:TweenObject(OptionsContainer, {Size = UDim2.new(0.5, -10, 0, 0)}, 0.2)
