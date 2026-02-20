@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - VERSÃO FINAL CORRIGIDA
+-- ☯ K9 UI LIBRARY - VERSÃO FINAL
 -- Parte 1/4: Estrutura Base e Serviços
 -- ═══════════════════════════════════════════════════════════════
 
@@ -255,8 +255,9 @@ function K9Library:CreateParticleNetwork(parent, customConfig)
 end
 
 print("[K9 UI] Parte 1/4 Carregada")
+-- FIM DA PARTE 1/4 - CONTINUA NA PARTE 2/4 ABAIXO
 -- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - VERSÃO FINAL CORRIGIDA
+-- ☯ K9 UI LIBRARY - VERSÃO FINAL
 -- Parte 2/4: UI Principal
 -- ═══════════════════════════════════════════════════════════════
 
@@ -373,10 +374,10 @@ function K9Library:CreateLib(libName, customTheme)
     
     local ContentPadding = Instance.new("UIPadding")
     ContentPadding.Parent = ContentContainer
-    ContentPadding.PaddingTop = UDim.new(0, 10)
-    ContentPadding.PaddingBottom = UDim.new(0, 10)
-    ContentPadding.PaddingLeft = UDim.new(0, 10)
-    ContentPadding.PaddingRight = UDim.new(0, 10)
+    ContentPadding.PaddingTop = UDim2.new(0, 10)
+    ContentPadding.PaddingBottom = UDim2.new(0, 10)
+    ContentPadding.PaddingLeft = UDim2.new(0, 10)
+    ContentPadding.PaddingRight = UDim2.new(0, 10)
     
     local ContentListLayout = Instance.new("UIListLayout")
     ContentListLayout.Parent = ContentContainer
@@ -578,19 +579,8 @@ function K9Library:CreateLib(libName, customTheme)
             SectionLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateSectionSize)
             
             local Elements = {}
-            
-            return Elements
-        end
-        
-        return Sections
-    end
-    
-    return Tabs
-end
-
-print("[K9 UI] Parte 2/4 Carregada")
 -- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - VERSÃO FINAL CORRIGIDA
+-- ☯ K9 UI LIBRARY - VERSÃO FINAL
 -- Parte 3/4: Elementos
 -- ═══════════════════════════════════════════════════════════════
 
@@ -1008,9 +998,19 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
     return DropdownFunctions
 end
 
+return Elements
+        end
+        
+        return Sections
+    end
+    
+    return Tabs
+end
+
 print("[K9 UI] Parte 3/4 Carregada")
+-- FIM DA PARTE 3/4 - CONTINUA NA PARTE 4/4 ABAIXO
 -- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - VERSÃO FINAL CORRIGIDA
+-- ☯ K9 UI LIBRARY - VERSÃO FINAL
 -- Parte 4/4: Finalização
 -- ═══════════════════════════════════════════════════════════════
 
