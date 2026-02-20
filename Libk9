@@ -1,6 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - VERSÃO FINAL
--- Parte 1/4: Estrutura Base e Serviços
+-- ☯ K9 UI LIBRARY - VERSÃO FINAL DEFINITIVA
+-- Parte 1/5: Estrutura Base e Serviços
 -- ═══════════════════════════════════════════════════════════════
 
 local K9Library = {}
@@ -254,11 +254,10 @@ function K9Library:CreateParticleNetwork(parent, customConfig)
     }
 end
 
-print("[K9 UI] Parte 1/4 Carregada")
--- FIM DA PARTE 1/4 - CONTINUA NA PARTE 2/4 ABAIXO
+print("[K9 UI] Parte 1/5 Carregada")
 -- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - VERSÃO FINAL
--- Parte 2/4: UI Principal
+-- ☯ K9 UI LIBRARY - VERSÃO FINAL DEFINITIVA
+-- Parte 2/5: UI Principal
 -- ═══════════════════════════════════════════════════════════════
 
 function K9Library:CreateLib(libName, customTheme)
@@ -353,16 +352,11 @@ function K9Library:CreateLib(libName, customTheme)
     NavListLayout.SortOrder = Enum.SortOrder.LayoutOrder
     NavListLayout.Padding = UDim.new(0, 4)
     
-    -- NAVEGAÇÃO PADDING
-local NavPadding = Instance.new("UIPadding")
-NavPadding.Parent = Navigation
-NavPadding.PaddingTop = UDim.new(0, 8)
-NavPadding.PaddingBottom = UDim.new(0, 8)
-NavPadding.PaddingLeft = UDim.new(0, 6)
-NavPadding.PaddingRight = UDim.new(0, 6)
-
--- CONTEÚDO PADDING
-
+    local NavPadding = Instance.new("UIPadding")
+    NavPadding.Parent = Navigation    NavPadding.PaddingTop = UDim.new(0, 8)
+    NavPadding.PaddingBottom = UDim.new(0, 8)
+    NavPadding.PaddingLeft = UDim.new(0, 6)
+    NavPadding.PaddingRight = UDim.new(0, 6)
     
     ContentContainer = Instance.new("ScrollingFrame")
     ContentContainer.Name = "ContentContainer"
@@ -378,16 +372,16 @@ NavPadding.PaddingRight = UDim.new(0, 6)
     ContentContainer.ClipsDescendants = true
     
     local ContentPadding = Instance.new("UIPadding")
-ContentPadding.Parent = ContentContainer
-ContentPadding.PaddingTop = UDim.new(0, 10)
-ContentPadding.PaddingBottom = UDim.new(0, 10)
-ContentPadding.PaddingLeft = UDim.new(0, 10)
-ContentPadding.PaddingRight = UDim.new(0, 10)
+    ContentPadding.Parent = ContentContainer
+    ContentPadding.PaddingTop = UDim.new(0, 10)
+    ContentPadding.PaddingBottom = UDim.new(0, 10)
+    ContentPadding.PaddingLeft = UDim.new(0, 10)
+    ContentPadding.PaddingRight = UDim.new(0, 10)
     
     local ContentListLayout = Instance.new("UIListLayout")
     ContentListLayout.Parent = ContentContainer
     ContentListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    ContentListLayout.Padding = UDim2.new(0, 8)
+    ContentListLayout.Padding = UDim.new(0, 8)
     
     TabsFolder = Instance.new("Folder")
     TabsFolder.Parent = ContentContainer
@@ -488,7 +482,7 @@ ContentPadding.PaddingRight = UDim.new(0, 10)
         local TabContentLayout = Instance.new("UIListLayout")
         TabContentLayout.Parent = TabContent
         TabContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        TabContentLayout.Padding = UDim2.new(0, 6)
+        TabContentLayout.Padding = UDim.new(0, 6)
         
         if firstTab then
             firstTab = false
@@ -564,14 +558,14 @@ ContentPadding.PaddingRight = UDim.new(0, 10)
             local SectionLayout = Instance.new("UIListLayout")
             SectionLayout.Parent = SectionContent
             SectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            SectionLayout.Padding = UDim2.new(0, 4)
+            SectionLayout.Padding = UDim.new(0, 4)
             
             local SectionPadding = Instance.new("UIPadding")
             SectionPadding.Parent = SectionContent
-            SectionPadding.PaddingTop = UDim2.new(0, 8)
-            SectionPadding.PaddingBottom = UDim2.new(0, 8)
-            SectionPadding.PaddingLeft = UDim2.new(0, 8)
-            SectionPadding.PaddingRight = UDim2.new(0, 8)
+            SectionPadding.PaddingTop = UDim.new(0, 8)
+            SectionPadding.PaddingBottom = UDim.new(0, 8)
+            SectionPadding.PaddingLeft = UDim.new(0, 8)
+            SectionPadding.PaddingRight = UDim.new(0, 8)
             
             local function UpdateSectionSize()
                 local contentSize = SectionLayout.AbsoluteContentSize.Y + 16
@@ -585,8 +579,8 @@ ContentPadding.PaddingRight = UDim.new(0, 10)
             
             local Elements = {}
 -- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - VERSÃO FINAL
--- Parte 3/4: Elementos
+-- ☯ K9 UI LIBRARY - VERSÃO FINAL DEFINITIVA
+-- Parte 3/5: Elementos (Button, Toggle)
 -- ═══════════════════════════════════════════════════════════════
 
 function Elements:NewButton(buttonName, callback)
@@ -730,8 +724,13 @@ function Elements:NewToggle(toggleName, default, callback)
     
     return ToggleFunctions
 end
+-- ═══════════════════════════════════════════════════════════════
+-- ☯ K9 UI LIBRARY - VERSÃO FINAL DEFINITIVA
+-- Parte 4/5: Elementos (Slider, Dropdown)
+-- ═══════════════════════════════════════════════════════════════
 
-function Elements:NewSlider(sliderName, minValue, maxValue, defaultValue, callback)    minValue = minValue or 0
+function Elements:NewSlider(sliderName, minValue, maxValue, defaultValue, callback)
+    minValue = minValue or 0
     maxValue = maxValue or 100
     defaultValue = defaultValue or minValue
     callback = callback or function(value) end
@@ -774,13 +773,13 @@ function Elements:NewSlider(sliderName, minValue, maxValue, defaultValue, callba
     SliderValue.TextColor3 = CurrentTheme.Accent
     SliderValue.TextSize = 12
     SliderValue.TextXAlignment = Enum.TextXAlignment.Right
-    
-    local SliderBar = Instance.new("Frame")
+        local SliderBar = Instance.new("Frame")
     SliderBar.Name = "SliderBar"
     SliderBar.Parent = SliderFrame
     SliderBar.BackgroundColor3 = CurrentTheme.Border
     SliderBar.Position = UDim2.new(0, 12, 0, 28)
-    SliderBar.Size = UDim2.new(1, -24, 0, 6)    
+    SliderBar.Size = UDim2.new(1, -24, 0, 6)
+    
     local BarCorner = Instance.new("UICorner")
     BarCorner.CornerRadius = UDim.new(1, 0)
     BarCorner.Parent = SliderBar
@@ -823,13 +822,13 @@ function Elements:NewSlider(sliderName, minValue, maxValue, defaultValue, callba
     end)
     
     UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
-           input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or            input.UserInputType == Enum.UserInputType.Touch then
             dragging = false
         end
     end)
     
-    UpdateSectionSize()    
+    UpdateSectionSize()
+    
     local SliderFunctions = {}
     function SliderFunctions:SetValue(value)
         UpdateSliderValue(value)
@@ -872,13 +871,13 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
     DropdownTitle.Name = "DropdownTitle"
     DropdownTitle.Parent = DropdownFrame
     DropdownTitle.BackgroundTransparency = 1
-    DropdownTitle.Position = UDim2.new(0, 12, 0, 0)
-    DropdownTitle.Size = UDim2.new(0.5, 0, 1, 0)
+    DropdownTitle.Position = UDim2.new(0, 12, 0, 0)    DropdownTitle.Size = UDim2.new(0.5, 0, 1, 0)
     DropdownTitle.FontFace = Config.Font
     DropdownTitle.Text = dropdownName
     DropdownTitle.TextColor3 = CurrentTheme.Text
     DropdownTitle.TextSize = 13
-    DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left    
+    DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
+    
     local DropdownButton = Instance.new("TextButton")
     DropdownButton.Name = "DropdownButton"
     DropdownButton.Parent = DropdownFrame
@@ -921,23 +920,23 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
     OptionsContainer.Size = UDim2.new(0.5, -10, 0, 0)
     OptionsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
     OptionsContainer.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    OptionsContainer.ScrollBarThickness = 3
-    OptionsContainer.ScrollBarImageColor3 = CurrentTheme.Accent
+    OptionsContainer.ScrollBarThickness = 3    OptionsContainer.ScrollBarImageColor3 = CurrentTheme.Accent
     OptionsContainer.Visible = false
     OptionsContainer.ZIndex = 10
     
     local OptionsCorner = Instance.new("UICorner")
-    OptionsCorner.CornerRadius = UDim.new(0, 4)    OptionsCorner.Parent = OptionsContainer
+    OptionsCorner.CornerRadius = UDim.new(0, 4)
+    OptionsCorner.Parent = OptionsContainer
     
     local OptionsLayout = Instance.new("UIListLayout")
     OptionsLayout.Parent = OptionsContainer
     OptionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    OptionsLayout.Padding = UDim2.new(0, 2)
+    OptionsLayout.Padding = UDim.new(0, 2)
     
     local OptionsPadding = Instance.new("UIPadding")
     OptionsPadding.Parent = OptionsContainer
-    OptionsPadding.PaddingTop = UDim2.new(0, 4)
-    OptionsPadding.PaddingBottom = UDim2.new(0, 4)
+    OptionsPadding.PaddingTop = UDim.new(0, 4)
+    OptionsPadding.PaddingBottom = UDim.new(0, 4)
     
     for index, option in ipairs(options) do
         local OptionButton = Instance.new("TextButton")
@@ -970,13 +969,13 @@ function Elements:NewDropdown(dropdownName, options, default, callback)
             pcall(function() callback(selectedOption) end)
         end)
     end
-    
-    DropdownButton.MouseButton1Click:Connect(function()
+        DropdownButton.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         if isOpen then
             OptionsContainer.Visible = true
             local optionCount = #options
-            local targetHeight = math.min(optionCount * 26, 100)            Utility:TweenObject(OptionsContainer, {Size = UDim2.new(0.5, -10, 0, targetHeight)}, 0.2)
+            local targetHeight = math.min(optionCount * 26, 100)
+            Utility:TweenObject(OptionsContainer, {Size = UDim2.new(0.5, -10, 0, targetHeight)}, 0.2)
             Utility:TweenObject(ArrowIcon, {Rotation = 180}, 0.2)
         else
             Utility:TweenObject(OptionsContainer, {Size = UDim2.new(0.5, -10, 0, 0)}, 0.2)
@@ -1012,11 +1011,10 @@ return Elements
     return Tabs
 end
 
-print("[K9 UI] Parte 3/4 Carregada")
--- FIM DA PARTE 3/4 - CONTINUA NA PARTE 4/4 ABAIXO
+print("[K9 UI] Parte 4/5 Carregada")
 -- ═══════════════════════════════════════════════════════════════
--- ☯ K9 UI LIBRARY - VERSÃO FINAL
--- Parte 4/4: Finalização
+-- ☯ K9 UI LIBRARY - VERSÃO FINAL DEFINITIVA
+-- Parte 5/5: Finalização
 -- ═══════════════════════════════════════════════════════════════
 
 function K9Library:NewWatermark(watermarkText)
@@ -1087,7 +1085,7 @@ end
 K9Library.Version = "1.0.0"
 K9Library.Author = "K9 Development"
 
-print("[K9 UI] Parte 4/4 Carregada - Library Completa!")
+print("[K9 UI] Parte 5/5 Carregada - Library Completa!")
 print("[K9 UI] Versao: " .. K9Library.Version)
 
 return K9Library
