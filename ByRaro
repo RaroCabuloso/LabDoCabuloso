@@ -2842,12 +2842,130 @@ end
                 	end
                 end	
                 return labelFunctions
-            end	
+            end
+            function Kavo:CreateParticleBackground()
+    local ScreenGui = game.CoreGui:FindFirstChild(LibName)
+    if not ScreenGui then return end
+    
+    -- Criar container das partículas
+    local ParticleContainer = Instance.new("Frame")
+    ParticleContainer.Name = "ParticleContainer"
+    ParticleContainer.Parent = ScreenGui
+    ParticleContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    ParticleContainer.BackgroundTransparency = 0.85
+    ParticleContainer.BorderSizePixel = 0
+    ParticleContainer.Position = UDim2.new(0, 0, 0, 0)
+    ParticleContainer.Size = UDim2.new(1, 0, 1, 0)
+    ParticleContainer.ZIndex = 0
+    ParticleContainer.ClipsDescendants = true
+    
+    local particles = {}
+    local numParticles = 40
+    local connectDistance = 150
+    
+    -- Criar partículas
+    for i = 1, numParticles do
+        local particle = Instance.new("Frame")
+        particle.Name = "Particle"..i
+        particle.Parent = ParticleContainer
+        particle.BackgroundColor3 = themeList.SchemeColor
+        particle.BackgroundTransparency = 0.3
+        particle.BorderSizePixel = 0
+        particle.Size = UDim2.new(0, 4, 0, 4)
+        particle.ZIndex = 1
+        
+        local UICorner = Instance.new("UICorner")
+        UICorner.CornerRadius = UDim.new(1, 0)
+        UICorner.Parent = particle
+        
+        table.insert(particles, {
+            frame = particle,
+            x = math.random(0, 525),
+            y = math.random(0, 318),
+            vx = (math.random() - 0.5) * 0.8,
+            vy = (math.random() - 0.5) * 0.8
+        })
+    end
+    
+    -- Criar linhas de conexão
+    local lineContainer = Instance.new("Frame")
+    lineContainer.Name = "LineContainer"
+    lineContainer.Parent = ParticleContainer
+    lineContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    lineContainer.BackgroundTransparency = 1    lineContainer.BorderSizePixel = 0
+    lineContainer.Size = UDim2.new(1, 0, 1, 0)
+    lineContainer.ZIndex = 0
+    
+    -- Função para criar linha entre partículas
+    local function createLine(x1, y1, x2, y2, transparency)
+        local length = math.sqrt((x2-x1)^2 + (y2-y1)^2)
+        local angle = math.atan2(y2-y1, x2-x1)
+        
+        local line = Instance.new("Frame")
+        line.Name = "ConnectionLine"
+        line.Parent = lineContainer
+        line.BackgroundColor3 = themeList.SchemeColor
+        line.BackgroundTransparency = transparency
+        line.BorderSizePixel = 0
+        line.Size = UDim2.new(0, length, 0, 1)
+        line.Position = UDim2.new(0, x1, 0, y1)
+        line.Rotation = math.deg(angle)
+        line.ZIndex = 0
+    end
+    
+    -- Loop de animação
+    local RunService = game:GetService("RunService")
+    local connection
+    connection = RunService.RenderStepped:Connect(function()
+        -- Limpar linhas antigas
+        for _, line in ipairs(lineContainer:GetChildren()) do
+            if line:IsA("Frame") then
+                line:Destroy()
+            end
+        end
+        
+        -- Atualizar e desenhar partículas
+        for i, p in ipairs(particles) do
+            -- Mover partícula
+            p.x = p.x + p.vx
+            p.y = p.y + p.vy
+            
+            -- Rebater nas bordas
+            if p.x <= 0 or p.x >= 525 then p.vx = -p.vx end
+            if p.y <= 0 or p.y >= 318 then p.vy = -p.vy end
+            
+            -- Atualizar posição
+            p.frame.Position = UDim2.new(0, p.x, 0, p.y)
+            
+            -- Conectar com outras partículas próximas
+            for j = i + 1, #particles do
+                local p2 = particles[j]
+                local dx = p.x - p2.x
+                local dy = p.y - p2.y                local distance = math.sqrt(dx^2 + dy^2)
+                
+                if distance < connectDistance then
+                    local transparency = 1 - (distance / connectDistance)
+                    createLine(p.x + 2, p.y + 2, p2.x + 2, p2.y + 2, transparency * 0.7)
+                end
+            end
+        end
+    end)
+    
+    -- Função para destruir o efeito
+    function Kavo:DestroyParticleBackground()
+        if connection then
+            connection:Disconnect()
+        end
+        ParticleContainer:Destroy()
+    end
+    
+    return ParticleContainer
+end
             return Elements
         end
         return Sections
     end  
     return Tabs
 end
-        
+
 return Kavo
