@@ -380,11 +380,16 @@ function Kavo.CreateLib(kavName, themeList)
     local ScreenGui = game.CoreGui:FindFirstChild(LibName)
     if not ScreenGui then return end
     
+    -- Encontrar o frame Main do menu
+    local MainFrame = ScreenGui:FindFirstChild("Main")
+    if not MainFrame then return end
+    
+    -- Container das partículas (dentro do menu)
     local ParticleContainer = Instance.new("Frame")
-    ParticleContainer.Name = "ParticleContainer"
-    ParticleContainer.Parent = ScreenGui
+    ParticleContainer.Name = "ParticleBackground"
+    ParticleContainer.Parent = MainFrame
     ParticleContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    ParticleContainer.BackgroundTransparency = 0.85
+    ParticleContainer.BackgroundTransparency = 1
     ParticleContainer.BorderSizePixel = 0
     ParticleContainer.Position = UDim2.new(0, 0, 0, 0)
     ParticleContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -392,32 +397,50 @@ function Kavo.CreateLib(kavName, themeList)
     ParticleContainer.ClipsDescendants = true
     
     local particles = {}
-    local numParticles = 40
-    local connectDistance = 150
+    local numParticles = 30
+    local connectionDistance = 120
     
+    -- Cores baseadas no tema
+    local particleColor = themeList.SchemeColor
+    
+    -- Criar partículas com aparência profissional
     for i = 1, numParticles do
         local particle = Instance.new("Frame")
         particle.Name = "Particle"..i
         particle.Parent = ParticleContainer
-        particle.BackgroundColor3 = themeList.SchemeColor
-        particle.BackgroundTransparency = 0.3
+        particle.BackgroundColor3 = particleColor
+        particle.BackgroundTransparency = 0.6
         particle.BorderSizePixel = 0
-        particle.Size = UDim2.new(0, 4, 0, 4)
+        particle.Size = UDim2.new(0, 3, 0, 3)
         particle.ZIndex = 1
+        
+        -- Efeito de brilho
+        local UIGlow = Instance.new("UIGlow")
+        UIGlow.Color = particleColor
+        UIGlow.Transparency = 0.5
+        UIGlow.Size = UDim2.new(1, 6, 1, 6)
+        UIGlow.Parent = particle
         
         local UICorner = Instance.new("UICorner")
         UICorner.CornerRadius = UDim.new(1, 0)
         UICorner.Parent = particle
         
+        -- Posição aleatória dentro do menu        local startX = math.random(50, 475)
+        local startY = math.random(40, 278)
+        
         table.insert(particles, {
             frame = particle,
-            x = math.random(0, 525),
-            y = math.random(0, 318),
-            vx = (math.random() - 0.5) * 0.8,
-            vy = (math.random() - 0.5) * 0.8
+            x = startX,
+            y = startY,
+            vx = (math.random() - 0.5) * 0.4,
+            vy = (math.random() - 0.5) * 0.4,
+            baseTransparency = 0.4 + math.random() * 0.3
         })
+        
+        particle.Position = UDim2.new(0, startX, 0, startY)
     end
     
+    -- Container das linhas de conexão
     local lineContainer = Instance.new("Frame")
     lineContainer.Name = "LineContainer"
     lineContainer.Parent = ParticleContainer
@@ -425,7 +448,10 @@ function Kavo.CreateLib(kavName, themeList)
     lineContainer.BackgroundTransparency = 1
     lineContainer.BorderSizePixel = 0
     lineContainer.Size = UDim2.new(1, 0, 1, 0)
-    lineContainer.ZIndex = 0    
+    lineContainer.ZIndex = 0
+    lineContainer.ClipsDescendants = true
+    
+    -- Função para criar linha suave
     local function createLine(x1, y1, x2, y2, transparency)
         local length = math.sqrt((x2-x1)^2 + (y2-y1)^2)
         local angle = math.atan2(y2-y1, x2-x1)
@@ -433,48 +459,76 @@ function Kavo.CreateLib(kavName, themeList)
         local line = Instance.new("Frame")
         line.Name = "ConnectionLine"
         line.Parent = lineContainer
-        line.BackgroundColor3 = themeList.SchemeColor
+        line.BackgroundColor3 = particleColor
         line.BackgroundTransparency = transparency
         line.BorderSizePixel = 0
         line.Size = UDim2.new(0, length, 0, 1)
         line.Position = UDim2.new(0, x1, 0, y1)
         line.Rotation = math.deg(angle)
         line.ZIndex = 0
-    end
+        
+        -- Gradiente para linha suave
+        local UIGradient = Instance.new("UIGradient")
+        UIGradient.Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, transparency),
+            NumberSequenceKeypoint.new(0.5, transparency - 0.2),
+            NumberSequenceKeypoint.new(1, transparency)
+        }
+        UIGradient.Parent = line    end
     
+    -- Loop de animação suave
     local RunService = game:GetService("RunService")
     local connection
+    local frameCount = 0
+    
     connection = RunService.RenderStepped:Connect(function()
+        frameCount = frameCount + 1
+        
+        -- Limpar linhas antigas a cada frame
         for _, line in ipairs(lineContainer:GetChildren()) do
-            if line:IsA("Frame") then
-                line:Destroy()
-            end
+            line:Destroy()
         end
         
+        -- Atualizar partículas
         for i, p in ipairs(particles) do
+            -- Movimento suave
             p.x = p.x + p.vx
             p.y = p.y + p.vy
             
-            if p.x <= 0 or p.x >= 525 then p.vx = -p.vx end
-            if p.y <= 0 or p.y >= 318 then p.vy = -p.vy end
+            -- Rebater nas bordas do menu (limites: 525x318)
+            if p.x <= 0 or p.x >= 522 then
+                p.vx = -p.vx
+                p.x = math.clamp(p.x, 0, 522)
+            end
+            if p.y <= 0 or p.y >= 315 then
+                p.vy = -p.vy
+                p.y = math.clamp(p.y, 0, 315)
+            end
             
+            -- Atualizar posição
             p.frame.Position = UDim2.new(0, p.x, 0, p.y)
             
+            -- Pulsação suave
+            local pulse = math.sin(frameCount * 0.05 + i) * 0.1 + p.baseTransparency
+            p.frame.BackgroundTransparency = math.clamp(pulse, 0.3, 0.8)
+            
+            -- Conectar com partículas próximas
             for j = i + 1, #particles do
                 local p2 = particles[j]
                 local dx = p.x - p2.x
                 local dy = p.y - p2.y
                 local distance = math.sqrt(dx^2 + dy^2)
                 
-                if distance < connectDistance then
-                    local transparency = 1 - (distance / connectDistance)
-                    createLine(p.x + 2, p.y + 2, p2.x + 2, p2.y + 2, transparency * 0.7)
+                if distance < connectionDistance then
+                    local transparency = 1 - (distance / connectionDistance)
+                    createLine(p.x + 1.5, p.y + 1.5, p2.x + 1.5, p2.y + 1.5, transparency * 0.5)
                 end
-            end
-        end
+            end        end
     end)
     
-    function Kavo:DestroyParticleBackground()        if connection then
+    -- Função para destruir
+    function Kavo:DestroyParticleBackground()
+        if connection then
             connection:Disconnect()
         end
         ParticleContainer:Destroy()
@@ -482,20 +536,20 @@ function Kavo.CreateLib(kavName, themeList)
     
     return ParticleContainer
 end
+
 function Kavo:CreateMobileToggleButton()
     local ScreenGui = game.CoreGui:FindFirstChild(LibName)
     if not ScreenGui then return end
     
     local toggleBtn = Instance.new("TextButton")
     local UICorner = Instance.new("UICorner")
-    local UIGradient = Instance.new("UIGradient")
     
     toggleBtn.Name = "MobileToggle"
     toggleBtn.Parent = ScreenGui
     toggleBtn.BackgroundColor3 = themeList.SchemeColor
     toggleBtn.BorderSizePixel = 0
     toggleBtn.Position = UDim2.new(0.02, 0, 0.5, 0)
-    toggleBtn.Size = UDim2.new(0, 45, 0, 45)
+    toggleBtn.Size = UDim2.new(0, 50, 0, 50)
     toggleBtn.ZIndex = 100
     toggleBtn.Text = ""
     toggleBtn.AutoButtonColor = false
@@ -503,25 +557,20 @@ function Kavo:CreateMobileToggleButton()
     UICorner.CornerRadius = UDim.new(0, 8)
     UICorner.Parent = toggleBtn
     
-    UIGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, themeList.SchemeColor),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(themeList.SchemeColor.r * 255 + 30, themeList.SchemeColor.g * 255 + 30, themeList.SchemeColor.b * 255 + 30))
-    }
-    UIGradient.Parent = toggleBtn
-    
     local icon = Instance.new("ImageLabel")
     icon.Name = "Icon"
     icon.Parent = toggleBtn
     icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     icon.BackgroundTransparency = 1
     icon.Position = UDim2.new(0.15, 0, 0.15, 0)
-    icon.Size = UDim2.new(0, 32, 0, 32)
+    icon.Size = UDim2.new(0, 35, 0, 35)
     icon.ZIndex = 101
     icon.Image = "rbxassetid://3926305904"
     icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
     icon.ImageRectOffset = Vector2.new(604, 764)
     icon.ImageRectSize = Vector2.new(36, 36)
     
+    -- Sistema de arrasto
     local dragging = false
     local dragInput, mousePos, framePos
     
@@ -550,29 +599,29 @@ function Kavo:CreateMobileToggleButton()
             local delta = input.Position - mousePos
             toggleBtn.Position = UDim2.new(
                 framePos.X.Scale, 
-                math.clamp(framePos.X.Offset + delta.X, 0, game.Players.LocalPlayer:GetMouse().ViewSizeX - 50),
+                math.clamp(framePos.X.Offset + delta.X, 0, game.Players.LocalPlayer:GetMouse().ViewSizeX - 55),
                 framePos.Y.Scale,
-                math.clamp(framePos.Y.Offset + delta.Y, 0, game.Players.LocalPlayer:GetMouse().ViewSizeY - 50)
+                math.clamp(framePos.Y.Offset + delta.Y, 0, game.Players.LocalPlayer:GetMouse().ViewSizeY - 55)
             )
         end
     end)
     
+    -- Clique para mostrar/esconder o menu
     toggleBtn.MouseButton1Click:Connect(function()
         Kavo:ToggleUI()
     end)
     
+    -- Atualização de cores
     coroutine.wrap(function()
         while wait() do
             toggleBtn.BackgroundColor3 = themeList.SchemeColor
-            UIGradient.Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, themeList.SchemeColor),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(math.clamp(themeList.SchemeColor.r * 255 + 30, 0, 255), math.clamp(themeList.SchemeColor.g * 255 + 30, 0, 255), math.clamp(themeList.SchemeColor.b * 255 + 30, 0, 255)))
-            }
+            icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
         end
     end)()
     
     return toggleBtn
 end
+
     local Tabs = {}
 
     local first = true
