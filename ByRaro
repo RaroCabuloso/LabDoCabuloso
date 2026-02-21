@@ -376,6 +376,203 @@ function Kavo.CreateLib(kavName, themeList)
             themeList.ElementColor = color
         end
     end
+    function Kavo:CreateParticleBackground()
+    local ScreenGui = game.CoreGui:FindFirstChild(LibName)
+    if not ScreenGui then return end
+    
+    local ParticleContainer = Instance.new("Frame")
+    ParticleContainer.Name = "ParticleContainer"
+    ParticleContainer.Parent = ScreenGui
+    ParticleContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    ParticleContainer.BackgroundTransparency = 0.85
+    ParticleContainer.BorderSizePixel = 0
+    ParticleContainer.Position = UDim2.new(0, 0, 0, 0)
+    ParticleContainer.Size = UDim2.new(1, 0, 1, 0)
+    ParticleContainer.ZIndex = 0
+    ParticleContainer.ClipsDescendants = true
+    
+    local particles = {}
+    local numParticles = 40
+    local connectDistance = 150
+    
+    for i = 1, numParticles do
+        local particle = Instance.new("Frame")
+        particle.Name = "Particle"..i
+        particle.Parent = ParticleContainer
+        particle.BackgroundColor3 = themeList.SchemeColor
+        particle.BackgroundTransparency = 0.3
+        particle.BorderSizePixel = 0
+        particle.Size = UDim2.new(0, 4, 0, 4)
+        particle.ZIndex = 1
+        
+        local UICorner = Instance.new("UICorner")
+        UICorner.CornerRadius = UDim.new(1, 0)
+        UICorner.Parent = particle
+        
+        table.insert(particles, {
+            frame = particle,
+            x = math.random(0, 525),
+            y = math.random(0, 318),
+            vx = (math.random() - 0.5) * 0.8,
+            vy = (math.random() - 0.5) * 0.8
+        })
+    end
+    
+    local lineContainer = Instance.new("Frame")
+    lineContainer.Name = "LineContainer"
+    lineContainer.Parent = ParticleContainer
+    lineContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    lineContainer.BackgroundTransparency = 1
+    lineContainer.BorderSizePixel = 0
+    lineContainer.Size = UDim2.new(1, 0, 1, 0)
+    lineContainer.ZIndex = 0    
+    local function createLine(x1, y1, x2, y2, transparency)
+        local length = math.sqrt((x2-x1)^2 + (y2-y1)^2)
+        local angle = math.atan2(y2-y1, x2-x1)
+        
+        local line = Instance.new("Frame")
+        line.Name = "ConnectionLine"
+        line.Parent = lineContainer
+        line.BackgroundColor3 = themeList.SchemeColor
+        line.BackgroundTransparency = transparency
+        line.BorderSizePixel = 0
+        line.Size = UDim2.new(0, length, 0, 1)
+        line.Position = UDim2.new(0, x1, 0, y1)
+        line.Rotation = math.deg(angle)
+        line.ZIndex = 0
+    end
+    
+    local RunService = game:GetService("RunService")
+    local connection
+    connection = RunService.RenderStepped:Connect(function()
+        for _, line in ipairs(lineContainer:GetChildren()) do
+            if line:IsA("Frame") then
+                line:Destroy()
+            end
+        end
+        
+        for i, p in ipairs(particles) do
+            p.x = p.x + p.vx
+            p.y = p.y + p.vy
+            
+            if p.x <= 0 or p.x >= 525 then p.vx = -p.vx end
+            if p.y <= 0 or p.y >= 318 then p.vy = -p.vy end
+            
+            p.frame.Position = UDim2.new(0, p.x, 0, p.y)
+            
+            for j = i + 1, #particles do
+                local p2 = particles[j]
+                local dx = p.x - p2.x
+                local dy = p.y - p2.y
+                local distance = math.sqrt(dx^2 + dy^2)
+                
+                if distance < connectDistance then
+                    local transparency = 1 - (distance / connectDistance)
+                    createLine(p.x + 2, p.y + 2, p2.x + 2, p2.y + 2, transparency * 0.7)
+                end
+            end
+        end
+    end)
+    
+    function Kavo:DestroyParticleBackground()        if connection then
+            connection:Disconnect()
+        end
+        ParticleContainer:Destroy()
+    end
+    
+    return ParticleContainer
+end
+function Kavo:CreateMobileToggleButton()
+    local ScreenGui = game.CoreGui:FindFirstChild(LibName)
+    if not ScreenGui then return end
+    
+    local toggleBtn = Instance.new("TextButton")
+    local UICorner = Instance.new("UICorner")
+    local UIGradient = Instance.new("UIGradient")
+    
+    toggleBtn.Name = "MobileToggle"
+    toggleBtn.Parent = ScreenGui
+    toggleBtn.BackgroundColor3 = themeList.SchemeColor
+    toggleBtn.BorderSizePixel = 0
+    toggleBtn.Position = UDim2.new(0.02, 0, 0.5, 0)
+    toggleBtn.Size = UDim2.new(0, 45, 0, 45)
+    toggleBtn.ZIndex = 100
+    toggleBtn.Text = ""
+    toggleBtn.AutoButtonColor = false
+    
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = toggleBtn
+    
+    UIGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, themeList.SchemeColor),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(themeList.SchemeColor.r * 255 + 30, themeList.SchemeColor.g * 255 + 30, themeList.SchemeColor.b * 255 + 30))
+    }
+    UIGradient.Parent = toggleBtn
+    
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "Icon"
+    icon.Parent = toggleBtn
+    icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    icon.BackgroundTransparency = 1
+    icon.Position = UDim2.new(0.15, 0, 0.15, 0)
+    icon.Size = UDim2.new(0, 32, 0, 32)
+    icon.ZIndex = 101
+    icon.Image = "rbxassetid://3926305904"
+    icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    icon.ImageRectOffset = Vector2.new(604, 764)
+    icon.ImageRectSize = Vector2.new(36, 36)
+    
+    local dragging = false
+    local dragInput, mousePos, framePos
+    
+    toggleBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            mousePos = input.Position
+            framePos = toggleBtn.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    toggleBtn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - mousePos
+            toggleBtn.Position = UDim2.new(
+                framePos.X.Scale, 
+                math.clamp(framePos.X.Offset + delta.X, 0, game.Players.LocalPlayer:GetMouse().ViewSizeX - 50),
+                framePos.Y.Scale,
+                math.clamp(framePos.Y.Offset + delta.Y, 0, game.Players.LocalPlayer:GetMouse().ViewSizeY - 50)
+            )
+        end
+    end)
+    
+    toggleBtn.MouseButton1Click:Connect(function()
+        Kavo:ToggleUI()
+    end)
+    
+    coroutine.wrap(function()
+        while wait() do
+            toggleBtn.BackgroundColor3 = themeList.SchemeColor
+            UIGradient.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, themeList.SchemeColor),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(math.clamp(themeList.SchemeColor.r * 255 + 30, 0, 255), math.clamp(themeList.SchemeColor.g * 255 + 30, 0, 255), math.clamp(themeList.SchemeColor.b * 255 + 30, 0, 255)))
+            }
+        end
+    end)()
+    
+    return toggleBtn
+end
     local Tabs = {}
 
     local first = true
@@ -2850,202 +3047,9 @@ end
     end  
     return Tabs
 end
-function Kavo:CreateParticleBackground()
-    local ScreenGui = game.CoreGui:FindFirstChild(LibName)
-    if not ScreenGui then return end
+
     
-    local ParticleContainer = Instance.new("Frame")
-    ParticleContainer.Name = "ParticleContainer"
-    ParticleContainer.Parent = ScreenGui
-    ParticleContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    ParticleContainer.BackgroundTransparency = 0.85
-    ParticleContainer.BorderSizePixel = 0
-    ParticleContainer.Position = UDim2.new(0, 0, 0, 0)
-    ParticleContainer.Size = UDim2.new(1, 0, 1, 0)
-    ParticleContainer.ZIndex = 0
-    ParticleContainer.ClipsDescendants = true
-    
-    local particles = {}
-    local numParticles = 40
-    local connectDistance = 150
-    
-    for i = 1, numParticles do
-        local particle = Instance.new("Frame")
-        particle.Name = "Particle"..i
-        particle.Parent = ParticleContainer
-        particle.BackgroundColor3 = themeList.SchemeColor
-        particle.BackgroundTransparency = 0.3
-        particle.BorderSizePixel = 0
-        particle.Size = UDim2.new(0, 4, 0, 4)
-        particle.ZIndex = 1
-        
-        local UICorner = Instance.new("UICorner")
-        UICorner.CornerRadius = UDim.new(1, 0)
-        UICorner.Parent = particle
-        
-        table.insert(particles, {
-            frame = particle,
-            x = math.random(0, 525),
-            y = math.random(0, 318),
-            vx = (math.random() - 0.5) * 0.8,
-            vy = (math.random() - 0.5) * 0.8
-        })
-    end
-    
-    local lineContainer = Instance.new("Frame")
-    lineContainer.Name = "LineContainer"
-    lineContainer.Parent = ParticleContainer
-    lineContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    lineContainer.BackgroundTransparency = 1
-    lineContainer.BorderSizePixel = 0
-    lineContainer.Size = UDim2.new(1, 0, 1, 0)
-    lineContainer.ZIndex = 0    
-    local function createLine(x1, y1, x2, y2, transparency)
-        local length = math.sqrt((x2-x1)^2 + (y2-y1)^2)
-        local angle = math.atan2(y2-y1, x2-x1)
-        
-        local line = Instance.new("Frame")
-        line.Name = "ConnectionLine"
-        line.Parent = lineContainer
-        line.BackgroundColor3 = themeList.SchemeColor
-        line.BackgroundTransparency = transparency
-        line.BorderSizePixel = 0
-        line.Size = UDim2.new(0, length, 0, 1)
-        line.Position = UDim2.new(0, x1, 0, y1)
-        line.Rotation = math.deg(angle)
-        line.ZIndex = 0
-    end
-    
-    local RunService = game:GetService("RunService")
-    local connection
-    connection = RunService.RenderStepped:Connect(function()
-        for _, line in ipairs(lineContainer:GetChildren()) do
-            if line:IsA("Frame") then
-                line:Destroy()
-            end
-        end
-        
-        for i, p in ipairs(particles) do
-            p.x = p.x + p.vx
-            p.y = p.y + p.vy
-            
-            if p.x <= 0 or p.x >= 525 then p.vx = -p.vx end
-            if p.y <= 0 or p.y >= 318 then p.vy = -p.vy end
-            
-            p.frame.Position = UDim2.new(0, p.x, 0, p.y)
-            
-            for j = i + 1, #particles do
-                local p2 = particles[j]
-                local dx = p.x - p2.x
-                local dy = p.y - p2.y
-                local distance = math.sqrt(dx^2 + dy^2)
-                
-                if distance < connectDistance then
-                    local transparency = 1 - (distance / connectDistance)
-                    createLine(p.x + 2, p.y + 2, p2.x + 2, p2.y + 2, transparency * 0.7)
-                end
-            end
-        end
-    end)
-    
-    function Kavo:DestroyParticleBackground()        if connection then
-            connection:Disconnect()
-        end
-        ParticleContainer:Destroy()
-    end
-    
-    return ParticleContainer
-end
-function Kavo:CreateMobileToggleButton()
-    local ScreenGui = game.CoreGui:FindFirstChild(LibName)
-    if not ScreenGui then return end
-    
-    local toggleBtn = Instance.new("TextButton")
-    local UICorner = Instance.new("UICorner")
-    local UIGradient = Instance.new("UIGradient")
-    
-    toggleBtn.Name = "MobileToggle"
-    toggleBtn.Parent = ScreenGui
-    toggleBtn.BackgroundColor3 = themeList.SchemeColor
-    toggleBtn.BorderSizePixel = 0
-    toggleBtn.Position = UDim2.new(0.02, 0, 0.5, 0)
-    toggleBtn.Size = UDim2.new(0, 45, 0, 45)
-    toggleBtn.ZIndex = 100
-    toggleBtn.Text = ""
-    toggleBtn.AutoButtonColor = false
-    
-    UICorner.CornerRadius = UDim.new(0, 8)
-    UICorner.Parent = toggleBtn
-    
-    UIGradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, themeList.SchemeColor),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(themeList.SchemeColor.r * 255 + 30, themeList.SchemeColor.g * 255 + 30, themeList.SchemeColor.b * 255 + 30))
-    }
-    UIGradient.Parent = toggleBtn
-    
-    local icon = Instance.new("ImageLabel")
-    icon.Name = "Icon"
-    icon.Parent = toggleBtn
-    icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    icon.BackgroundTransparency = 1
-    icon.Position = UDim2.new(0.15, 0, 0.15, 0)
-    icon.Size = UDim2.new(0, 32, 0, 32)
-    icon.ZIndex = 101
-    icon.Image = "rbxassetid://3926305904"
-    icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
-    icon.ImageRectOffset = Vector2.new(604, 764)
-    icon.ImageRectSize = Vector2.new(36, 36)
-    
-    local dragging = false
-    local dragInput, mousePos, framePos
-    
-    toggleBtn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            mousePos = input.Position
-            framePos = toggleBtn.Position
-            
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-    
-    toggleBtn.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-    
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - mousePos
-            toggleBtn.Position = UDim2.new(
-                framePos.X.Scale, 
-                math.clamp(framePos.X.Offset + delta.X, 0, game.Players.LocalPlayer:GetMouse().ViewSizeX - 50),
-                framePos.Y.Scale,
-                math.clamp(framePos.Y.Offset + delta.Y, 0, game.Players.LocalPlayer:GetMouse().ViewSizeY - 50)
-            )
-        end
-    end)
-    
-    toggleBtn.MouseButton1Click:Connect(function()
-        Kavo:ToggleUI()
-    end)
-    
-    coroutine.wrap(function()
-        while wait() do
-            toggleBtn.BackgroundColor3 = themeList.SchemeColor
-            UIGradient.Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, themeList.SchemeColor),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(math.clamp(themeList.SchemeColor.r * 255 + 30, 0, 255), math.clamp(themeList.SchemeColor.g * 255 + 30, 0, 255), math.clamp(themeList.SchemeColor.b * 255 + 30, 0, 255)))
-            }
-        end
-    end)()
-    
-    return toggleBtn
-end
+
+
 
 return Kavo
