@@ -380,11 +380,9 @@ function Kavo.CreateLib(kavName, themeList)
     local ScreenGui = game.CoreGui:FindFirstChild(LibName)
     if not ScreenGui then return end
     
-    -- Encontrar o frame Main do menu
     local MainFrame = ScreenGui:FindFirstChild("Main")
     if not MainFrame then return end
     
-    -- Container das partículas (dentro do menu)
     local ParticleContainer = Instance.new("Frame")
     ParticleContainer.Name = "ParticleBackground"
     ParticleContainer.Parent = MainFrame
@@ -399,11 +397,8 @@ function Kavo.CreateLib(kavName, themeList)
     local particles = {}
     local numParticles = 30
     local connectionDistance = 120
-    
-    -- Cores baseadas no tema
     local particleColor = themeList.SchemeColor
     
-    -- Criar partículas com aparência profissional
     for i = 1, numParticles do
         local particle = Instance.new("Frame")
         particle.Name = "Particle"..i
@@ -414,18 +409,11 @@ function Kavo.CreateLib(kavName, themeList)
         particle.Size = UDim2.new(0, 3, 0, 3)
         particle.ZIndex = 1
         
-        -- Efeito de brilho
-        local UIGlow = Instance.new("UIGlow")
-        UIGlow.Color = particleColor
-        UIGlow.Transparency = 0.5
-        UIGlow.Size = UDim2.new(1, 6, 1, 6)
-        UIGlow.Parent = particle
-        
         local UICorner = Instance.new("UICorner")
         UICorner.CornerRadius = UDim.new(1, 0)
         UICorner.Parent = particle
         
-        -- Posição aleatória dentro do menu        local startX = math.random(50, 475)
+        local startX = math.random(50, 475)
         local startY = math.random(40, 278)
         
         table.insert(particles, {
@@ -437,10 +425,8 @@ function Kavo.CreateLib(kavName, themeList)
             baseTransparency = 0.4 + math.random() * 0.3
         })
         
-        particle.Position = UDim2.new(0, startX, 0, startY)
-    end
+        particle.Position = UDim2.new(0, startX, 0, startY)    end
     
-    -- Container das linhas de conexão
     local lineContainer = Instance.new("Frame")
     lineContainer.Name = "LineContainer"
     lineContainer.Parent = ParticleContainer
@@ -451,7 +437,6 @@ function Kavo.CreateLib(kavName, themeList)
     lineContainer.ZIndex = 0
     lineContainer.ClipsDescendants = true
     
-    -- Função para criar linha suave
     local function createLine(x1, y1, x2, y2, transparency)
         local length = math.sqrt((x2-x1)^2 + (y2-y1)^2)
         local angle = math.atan2(y2-y1, x2-x1)
@@ -466,17 +451,8 @@ function Kavo.CreateLib(kavName, themeList)
         line.Position = UDim2.new(0, x1, 0, y1)
         line.Rotation = math.deg(angle)
         line.ZIndex = 0
-        
-        -- Gradiente para linha suave
-        local UIGradient = Instance.new("UIGradient")
-        UIGradient.Transparency = NumberSequence.new{
-            NumberSequenceKeypoint.new(0, transparency),
-            NumberSequenceKeypoint.new(0.5, transparency - 0.2),
-            NumberSequenceKeypoint.new(1, transparency)
-        }
-        UIGradient.Parent = line    end
+    end
     
-    -- Loop de animação suave
     local RunService = game:GetService("RunService")
     local connection
     local frameCount = 0
@@ -484,35 +460,27 @@ function Kavo.CreateLib(kavName, themeList)
     connection = RunService.RenderStepped:Connect(function()
         frameCount = frameCount + 1
         
-        -- Limpar linhas antigas a cada frame
         for _, line in ipairs(lineContainer:GetChildren()) do
             line:Destroy()
         end
         
-        -- Atualizar partículas
         for i, p in ipairs(particles) do
-            -- Movimento suave
             p.x = p.x + p.vx
             p.y = p.y + p.vy
             
-            -- Rebater nas bordas do menu (limites: 525x318)
             if p.x <= 0 or p.x >= 522 then
                 p.vx = -p.vx
                 p.x = math.clamp(p.x, 0, 522)
             end
             if p.y <= 0 or p.y >= 315 then
                 p.vy = -p.vy
-                p.y = math.clamp(p.y, 0, 315)
-            end
+                p.y = math.clamp(p.y, 0, 315)            end
             
-            -- Atualizar posição
             p.frame.Position = UDim2.new(0, p.x, 0, p.y)
             
-            -- Pulsação suave
             local pulse = math.sin(frameCount * 0.05 + i) * 0.1 + p.baseTransparency
             p.frame.BackgroundTransparency = math.clamp(pulse, 0.3, 0.8)
             
-            -- Conectar com partículas próximas
             for j = i + 1, #particles do
                 local p2 = particles[j]
                 local dx = p.x - p2.x
@@ -523,10 +491,10 @@ function Kavo.CreateLib(kavName, themeList)
                     local transparency = 1 - (distance / connectionDistance)
                     createLine(p.x + 1.5, p.y + 1.5, p2.x + 1.5, p2.y + 1.5, transparency * 0.5)
                 end
-            end        end
+            end
+        end
     end)
     
-    -- Função para destruir
     function Kavo:DestroyParticleBackground()
         if connection then
             connection:Disconnect()
@@ -537,58 +505,61 @@ function Kavo.CreateLib(kavName, themeList)
     return ParticleContainer
 end
 
+-- Variável para controlar o botão toggle
+local mobileToggleBtn = nil
+
 function Kavo:CreateMobileToggleButton()
     local ScreenGui = game.CoreGui:FindFirstChild(LibName)
     if not ScreenGui then return end
     
-    local toggleBtn = Instance.new("TextButton")
+    -- Criar botão fora do Main (para não ser escondido)
+    mobileToggleBtn = Instance.new("TextButton")
     local UICorner = Instance.new("UICorner")
+    local Icon = Instance.new("ImageLabel")
     
-    toggleBtn.Name = "MobileToggle"
-    toggleBtn.Parent = ScreenGui
-    toggleBtn.BackgroundColor3 = themeList.SchemeColor
-    toggleBtn.BorderSizePixel = 0
-    toggleBtn.Position = UDim2.new(0.02, 0, 0.5, 0)
-    toggleBtn.Size = UDim2.new(0, 50, 0, 50)
-    toggleBtn.ZIndex = 100
-    toggleBtn.Text = ""
-    toggleBtn.AutoButtonColor = false
+    mobileToggleBtn.Name = "MobileToggleBtn"
+    mobileToggleBtn.Parent = ScreenGui  -- Filho direto do ScreenGui, não do Main!
+    mobileToggleBtn.BackgroundColor3 = themeList.SchemeColor
+    mobileToggleBtn.BorderSizePixel = 0
+    mobileToggleBtn.Position = UDim2.new(0.02, 0, 0.5, 0)
+    mobileToggleBtn.Size = UDim2.new(0, 50, 0, 50)
+    mobileToggleBtn.ZIndex = 1000  -- ZIndex alto para ficar por cima
+    mobileToggleBtn.Text = ""
+    mobileToggleBtn.AutoButtonColor = false
     
     UICorner.CornerRadius = UDim.new(0, 8)
-    UICorner.Parent = toggleBtn
+    UICorner.Parent = mobileToggleBtn
     
-    local icon = Instance.new("ImageLabel")
-    icon.Name = "Icon"
-    icon.Parent = toggleBtn
-    icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    icon.BackgroundTransparency = 1
-    icon.Position = UDim2.new(0.15, 0, 0.15, 0)
-    icon.Size = UDim2.new(0, 35, 0, 35)
-    icon.ZIndex = 101
-    icon.Image = "rbxassetid://3926305904"
-    icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
-    icon.ImageRectOffset = Vector2.new(604, 764)
-    icon.ImageRectSize = Vector2.new(36, 36)
+    Icon.Name = "Icon"
+    Icon.Parent = mobileToggleBtn
+    Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Icon.BackgroundTransparency = 1
+    Icon.Position = UDim2.new(0.15, 0, 0.15, 0)
+    Icon.Size = UDim2.new(0, 35, 0, 35)
+    Icon.ZIndex = 1001
+    Icon.Image = "rbxassetid://3926305904"
+    Icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    Icon.ImageRectOffset = Vector2.new(604, 764)
+    Icon.ImageRectSize = Vector2.new(36, 36)
     
     -- Sistema de arrasto
     local dragging = false
     local dragInput, mousePos, framePos
     
-    toggleBtn.InputBegan:Connect(function(input)
+    mobileToggleBtn.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             mousePos = input.Position
-            framePos = toggleBtn.Position
+            framePos = mobileToggleBtn.Position
             
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
+                    dragging = false                end
             end)
         end
     end)
     
-    toggleBtn.InputChanged:Connect(function(input)
+    mobileToggleBtn.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
             dragInput = input
         end
@@ -597,31 +568,46 @@ function Kavo:CreateMobileToggleButton()
     game:GetService("UserInputService").InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - mousePos
-            toggleBtn.Position = UDim2.new(
+            local mouse = game.Players.LocalPlayer:GetMouse()
+            mobileToggleBtn.Position = UDim2.new(
                 framePos.X.Scale, 
-                math.clamp(framePos.X.Offset + delta.X, 0, game.Players.LocalPlayer:GetMouse().ViewSizeX - 55),
+                math.clamp(framePos.X.Offset + delta.X, 0, mouse.ViewSizeX - 55),
                 framePos.Y.Scale,
-                math.clamp(framePos.Y.Offset + delta.Y, 0, game.Players.LocalPlayer:GetMouse().ViewSizeY - 55)
+                math.clamp(framePos.Y.Offset + delta.Y, 0, mouse.ViewSizeY - 55)
             )
         end
     end)
     
-    -- Clique para mostrar/esconder o menu
-    toggleBtn.MouseButton1Click:Connect(function()
-        Kavo:ToggleUI()
+    -- Clique para mostrar/esconder APENAS o Main
+    mobileToggleBtn.MouseButton1Click:Connect(function()
+        local Main = ScreenGui:FindFirstChild("Main")
+        if Main then
+            Main.Visible = not Main.Visible
+        end
     end)
     
     -- Atualização de cores
     coroutine.wrap(function()
         while wait() do
-            toggleBtn.BackgroundColor3 = themeList.SchemeColor
-            icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+            if mobileToggleBtn then
+                mobileToggleBtn.BackgroundColor3 = themeList.SchemeColor
+                Icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+            end
         end
     end)()
     
-    return toggleBtn
+    return mobileToggleBtn
 end
 
+-- Modificar a função ToggleUI para não afetar o botão mobile
+function Kavo:ToggleUI()
+    local ScreenGui = game.CoreGui:FindFirstChild(LibName)
+    if not ScreenGui then return end
+        local Main = ScreenGui:FindFirstChild("Main")
+    if Main then
+        Main.Visible = not Main.Visible
+    end
+end
     local Tabs = {}
 
     local first = true
