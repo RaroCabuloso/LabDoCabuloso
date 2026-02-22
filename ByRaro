@@ -615,7 +615,6 @@ end
     function Tabs:NewTab(tabName, tabIcon)
     tabName = tabName or "Tab"
     tabIcon = tabIcon or ""
-
     local tabButton = Instance.new("TextButton")
     local UICorner = Instance.new("UICorner")
     local page = Instance.new("ScrollingFrame")
@@ -661,8 +660,8 @@ end
 
     tabIconLabel.Name = "Icon"
     tabIconLabel.Parent = tabButton
-    tabIconLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)    tabIconLabel.BackgroundTransparency = 1
-    tabIconLabel.Position = UDim2.new(0, 8, 0, 4)
+    tabIconLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    tabIconLabel.BackgroundTransparency = 1    tabIconLabel.Position = UDim2.new(0, 8, 0, 4)
     tabIconLabel.Size = UDim2.new(0, 20, 0, 20)
     tabIconLabel.Image = tabIcon
     tabIconLabel.ImageColor3 = themeList.TextColor
@@ -711,12 +710,19 @@ end
         end 
         Utility:TweenObject(tabButton, {BackgroundTransparency = 0}, 0.2)
     end)
-    return {
-        AddSection = function(s)
-            return Sections.NewSection(s)
-        end
-    }
-end
+
+        local Sections = {}
+        local focusing = false
+        local viewDe = false
+
+        coroutine.wrap(function()
+            while wait() do
+                page.BackgroundColor3 = themeList.Background
+                page.ScrollBarImageColor3 = Color3.fromRGB(themeList.SchemeColor.r * 255 - 16, themeList.SchemeColor.g * 255 - 15, themeList.SchemeColor.b * 255 - 28)
+                tabButton.TextColor3 = themeList.TextColor
+                tabButton.BackgroundColor3 = themeList.SchemeColor
+            end
+        end)()
     
         function Sections:NewSection(secName, hidden)
             secName = secName or "Section"
