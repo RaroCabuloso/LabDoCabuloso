@@ -611,7 +611,8 @@ end
     local Tabs = {}
 
     local first = true
-function Tabs:NewTab(tabName, tabIcon)
+
+    function Tabs:NewTab(tabName, tabIcon)
     tabName = tabName or "Tab"
     tabIcon = tabIcon or ""
 
@@ -716,19 +717,6 @@ function Tabs:NewTab(tabName, tabIcon)
         end
     }
 end
-    
-        local Sections = {}
-        local focusing = false
-        local viewDe = false
-
-        coroutine.wrap(function()
-            while wait() do
-                page.BackgroundColor3 = themeList.Background
-                page.ScrollBarImageColor3 = Color3.fromRGB(themeList.SchemeColor.r * 255 - 16, themeList.SchemeColor.g * 255 - 15, themeList.SchemeColor.b * 255 - 28)
-                tabButton.TextColor3 = themeList.TextColor
-                tabButton.BackgroundColor3 = themeList.SchemeColor
-            end
-        end)()
     
         function Sections:NewSection(secName, hidden)
             secName = secName or "Section"
